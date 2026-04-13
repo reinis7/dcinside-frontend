@@ -1,6 +1,7 @@
 import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import { WwwHomePage } from '../pages/www/WwwHomePage'
 import { WwwMyPage } from '../pages/www/WwwMyPage'
+import { RequireAuth } from '../auth/RequireAuth'
 
 function WwwLayout() {
   return (
@@ -78,13 +79,20 @@ function WwwLayout() {
       <main className="mx-auto w-[1050px] px-1 py-3 text-[12px]">
         <Routes>
           <Route index element={<WwwHomePage />} />
-          <Route path="my" element={<WwwMyPage />} />
+          <Route
+            path="my"
+            element={
+              <RequireAuth>
+                <WwwMyPage />
+              </RequireAuth>
+            }
+          />
           <Route path="*" element={<Navigate to="/www" replace />} />
         </Routes>
       </main>
 
       <footer className="mt-10 border-t border-[#d3d3d3] bg-white">
-        <div className="mx-auto w-[980px] px-1 py-6 text-center text-[12px] text-[#666]">
+        <div className="mx-auto w-[1050px] px-1 py-6 text-center text-[12px] text-[#666]">
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
               회사소개

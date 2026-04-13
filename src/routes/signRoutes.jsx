@@ -1,5 +1,6 @@
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { SignLoginPage } from '../pages/sign/SignLoginPage'
+import { SignRegisterPage } from '../pages/sign/SignRegisterPage'
 import { SignJoinAgreePage } from '../pages/sign/SignJoinAgreePage'
 import { SignJoinInfoPage } from '../pages/sign/SignJoinInfoPage'
 import { SignJoinSecurityPage } from '../pages/sign/SignJoinSecurityPage'
@@ -102,6 +103,7 @@ function SignLayout() {
         <Routes>
           <Route index element={<SignHomePage />} />
           <Route path="login" element={<SignLoginPage />} />
+          <Route path="register" element={<SignRegisterPage />} />
           <Route path="join/agree" element={<SignJoinAgreePage />} />
           <Route path="join/info" element={<SignJoinInfoPage />} />
           <Route path="join/security" element={<SignJoinSecurityPage />} />

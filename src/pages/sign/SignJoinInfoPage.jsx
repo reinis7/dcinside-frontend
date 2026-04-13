@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 function strengthScore(pw) {
   let score = 0
@@ -11,7 +11,9 @@ function strengthScore(pw) {
 }
 
 export function SignJoinInfoPage() {
+  const location = useLocation()
   const navigate = useNavigate()
+  const agree = location.state?.agree ?? { terms: false, privacy: false, marketing: false }
   // 백엔드가 있다고 가정: join draft가 이미 생성되어 식별 코드는 고정된 상태(수정 불가)
   const [draft] = useState({
     userId: 'wish8583',
@@ -235,7 +237,13 @@ export function SignJoinInfoPage() {
                       : 'border-[#b1b1b1] bg-[#d8d8d8] text-[#8a8a8a]',
                   ].join(' ')}
                   onClick={() => {
-                    const joinForm = { userId: draft.userId, nickname: form.nickname, nickType: form.nickType }
+                    const joinForm = {
+                      userId: draft.userId,
+                      password: form.password,
+                      nickname: form.nickname,
+                      nickType: form.nickType,
+                      agree,
+                    }
                     setOpenSecurityNotice(false)
                     navigate('/sign/join/security', { state: { joinForm, securityCode } })
                   }}

@@ -1,0 +1,55 @@
+import { useMemo, useState } from 'react'
+import { Pager } from './ui/Pager'
+import { ThumbStrip } from './ui/ThumbStrip'
+
+export function RealtimeBestSection({ items }) {
+  const [page, setPage] = useState(1)
+  const pageSize = 20
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return items.slice(start, start + pageSize)
+  }, [items, page])
+
+  return (
+    <div className="border border-[#d3d3d3] bg-white">
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[13px] font-bold text-[#273589]">실시간 베스트</h2>
+          <span className="text-[11px] font-bold text-[#3b4890]">실베라이트</span>
+        </div>
+        <Pager
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
+      </div>
+
+      <div className="border-t border-[#d3d3d3] px-3 py-2">
+        <ThumbStrip items={pageItems.slice(0, 5)} />
+      </div>
+
+      <ul className="border-t border-[#d3d3d3]">
+        {pageItems.map((it) => (
+          <li
+            key={it.id}
+            className="grid grid-cols-[46px_1fr_62px] items-center gap-2 border-b border-[#ededed] px-3 py-1.5 last:border-b-0"
+          >
+            <img
+              src={it.thumb}
+              alt=""
+              className="h-[38px] w-[46px] rounded border border-[#e5e5e5] bg-white object-cover"
+            />
+            <a href={it.href} className="min-w-0 truncate text-[12px] text-[#333] hover:underline">
+              {it.title}{' '}
+              {it.commentCount > 0 ? <span className="font-bold text-[#d31900]">[{it.commentCount}]</span> : null}
+            </a>
+            <div className="text-right text-[11px] text-[#999]">{it.time}</div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+

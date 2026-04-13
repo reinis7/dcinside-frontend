@@ -1,5 +1,8 @@
-import { useMemo } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { registerUser } from '../../auth/registerApi'
+import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
+import { useAuth } from '../../auth/authContext'
 
 function makeSecurityCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase()
@@ -7,9 +10,13 @@ function makeSecurityCode() {
 
 export function SignJoinSecurityPage() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { login: doLogin, loadViewer } = useAuth()
   const joinForm = location.state?.joinForm
   const generatedCode = useMemo(() => makeSecurityCode(), [])
   const securityCode = location.state?.securityCode ?? generatedCode
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   return (
     <section className="mx-auto w-[760px] border border-[#d1d5db] bg-white p-4 text-[12px]">
@@ -39,14 +46,60 @@ export function SignJoinSecurityPage() {
         <Link className="text-[#666] hover:underline" to="/sign/join/info">
           이전
         </Link>
-        <Link
-          className="inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white"
-          to="/sign/join/done"
-          state={{ joinForm, securityCode }}
+        <button
+          type="button"
+          className={
+            !isSubmitting
+              ? 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white'
+              : 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#b1b1b1] bg-[#d8d8d8] px-4 text-[12px] font-semibold text-[#8a8a8a]'
+          }
+          disabled={isSubmitting}
+          onClick={async () => {
+            if (isSubmitting) return
+            setErrorMsg('')
+            setIsSubmitting(true)
+            try {
+              const agree = joinForm?.agree ?? { terms: false, privacy: false, marketing: false }
+              const registerData = await registerUser({
+                username: joinForm?.userId ?? '',
+                password: joinForm?.password ?? '',
+                email: joinForm?.email,
+                nickname: joinForm?.nickname ?? '',
+                agreedTerms: Boolean(agree.terms),
+                agreedPrivacy: Boolean(agree.privacy),
+                agreedMarketing: Boolean(agree.marketing),
+                securityCode,
+              })
+
+              const payload = registerData?.dcinsideRegisterUser
+              if (!payload?.success) {
+                throw new Error(payload?.message || '회원가입에 실패했습니다.')
+              }
+
+              // 자동 로그인(세션 쿠키)
+              await doLogin({ userId: joinForm?.userId ?? '', password: joinForm?.password ?? '' })
+              await loadViewer()
+
+              navigate('/sign/join/done', {
+                replace: true,
+                state: { joinForm, securityCode, registerResult: payload, autoLoggedIn: true },
+              })
+            } catch (err) {
+              setErrorMsg(firstGraphQLErrorMessage(err))
+            } finally {
+              setIsSubmitting(false)
+            }
+          }}
         >
           신청 완료
-        </Link>
+        </button>
       </div>
+
+      {errorMsg ? (
+        <div className="mt-3 rounded border border-[#f2b8b5] bg-[#fff5f5] px-3 py-2 text-[12px] text-[#d31900]">
+          {errorMsg}
+        </div>
+      ) : null}
     </section>
   )
 }

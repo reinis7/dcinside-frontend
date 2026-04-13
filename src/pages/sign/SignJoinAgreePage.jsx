@@ -501,6 +501,13 @@ export function SignJoinAgreePage() {
           <Link
             className="inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white"
             to="/sign/join/info"
+            state={{
+              agree: {
+                terms: agreeTerms,
+                privacy: agreePrivacy,
+                marketing: false,
+              },
+            }}
           >
             다음
           </Link>

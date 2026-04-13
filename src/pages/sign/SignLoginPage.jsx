@@ -1,8 +1,12 @@
 import { useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../auth/authContext'
+import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 
 export function SignLoginPage() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const { login } = useAuth()
   const sUrl = searchParams.get('s_url') ?? '/www'
   const [form, setForm] = useState({
     userId: '',
@@ -12,10 +16,27 @@ export function SignLoginPage() {
   })
 
   const canLogin = form.userId.trim().length > 0 && form.password.length > 0
+  const [errorMsg, setErrorMsg] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const onChange = (key) => (e) => {
     const value = typeof e === 'boolean' ? e : e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const onSubmit = async (e) => {
+    e.preventDefault()
+    if (!canLogin || isSubmitting) return
+    setErrorMsg('')
+    setIsSubmitting(true)
+    try {
+      await login({ userId: form.userId, password: form.password })
+      navigate(sUrl, { replace: true })
+    } catch (err) {
+      setErrorMsg(firstGraphQLErrorMessage(err))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -23,7 +44,7 @@ export function SignLoginPage() {
       <h2 className="text-[24px] font-semibold">로그인</h2>
       <p className="mt-1 text-[12px] text-[#666]">요청된 복귀 경로(s_url): {sUrl}</p>
 
-      <div className="mt-3 grid max-w-[420px] gap-3 border-t-2 border-[#374151] pt-3">
+      <form onSubmit={onSubmit} className="mt-3 grid max-w-[420px] gap-3 border-t-2 border-[#374151] pt-3">
         <label className="grid gap-1">
           <span className="font-semibold">식별 코드</span>
           <input
@@ -58,25 +79,22 @@ export function SignLoginPage() {
           </label>
         </div>
 
+        {errorMsg ? <div className="rounded border border-[#f2b8b5] bg-[#fff5f5] px-3 py-2 text-[#d31900]">{errorMsg}</div> : null}
+
         <div className="flex justify-end">
-          {canLogin ? (
-            <Link
-              className="inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white"
-              to={sUrl}
-            >
-              로그인
-            </Link>
-          ) : (
-            <button
-              type="button"
-              className="inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#b1b1b1] bg-[#d8d8d8] px-4 text-[12px] text-[#8a8a8a]"
-              disabled
-            >
-              로그인
-            </button>
-          )}
+          <button
+            type="submit"
+            className={
+              canLogin && !isSubmitting
+                ? 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white'
+                : 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#b1b1b1] bg-[#d8d8d8] px-4 text-[12px] text-[#8a8a8a]'
+            }
+            disabled={!canLogin || isSubmitting}
+          >
+            로그인
+          </button>
         </div>
-      </div>
+      </form>
 
       <div className="mt-4 flex items-center gap-2 text-[12px] text-[#666]">
         <Link to="/sign/join/agree" className="text-[#334499] hover:underline">
