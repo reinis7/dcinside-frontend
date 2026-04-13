@@ -1,14 +1,15 @@
 import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client/core'
+import { authLink } from './authLink'
 import { getGraphqlUri } from './graphqlEndpoint'
 
-// 세션 쿠키: 반드시 credentials: 'include' (백엔드 가이드 A)
+// JWT: Authorization Bearer. 쿠키 세션 불필요 시 credentials 생략 가능.
 const httpLink = new HttpLink({
   uri: getGraphqlUri(),
-  credentials: 'include',
+  credentials: 'omit',
 })
 
 export const apolloClient = new ApolloClient({
-  link: ApolloLink.from([httpLink]),
+  link: ApolloLink.from([authLink, httpLink]),
   cache: new InMemoryCache(),
   connectToDevTools: true,
 })

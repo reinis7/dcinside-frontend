@@ -66,7 +66,7 @@ export function SignRegisterPage() {
   return (
     <section className="mx-auto w-[760px] border border-[#d1d5db] bg-white p-4 text-[12px]">
       <h2 className="text-[24px] font-semibold">회원가입</h2>
-      <p className="mt-1 text-[12px] text-[#666]">GraphQL 회원가입 + 자동 로그인(세션 쿠키) 연동 페이지</p>
+      <p className="mt-1 text-[12px] text-[#666]">GraphQL 회원가입 + 자동 로그인(JWT) 연동 페이지</p>
 
       <form onSubmit={onSubmit} className="mt-3 grid gap-3 border-t-2 border-[#374151] pt-3">
         <label className="grid gap-1">

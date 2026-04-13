@@ -76,7 +76,7 @@ export function SignJoinSecurityPage() {
                 throw new Error(payload?.message || '회원가입에 실패했습니다.')
               }
 
-              // 자동 로그인(세션 쿠키)
+              // 자동 로그인(JWT)
               await doLogin({ userId: joinForm?.userId ?? '', password: joinForm?.password ?? '' })
               await loadViewer()
 

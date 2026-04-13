@@ -1,4 +1,5 @@
 import { getGraphqlUri } from '../apollo/graphqlEndpoint'
+import { getAuthorizationHeader } from '../auth/jwtStorage'
 
 function normalizeGraphQLError(payload) {
   const message =
@@ -11,10 +12,14 @@ function normalizeGraphQLError(payload) {
 }
 
 export async function gqlRequest({ query, variables, signal }) {
+  const headers = { 'content-type': 'application/json' }
+  const auth = getAuthorizationHeader()
+  if (auth) headers.authorization = auth
+
   const res = await fetch(getGraphqlUri(), {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    credentials: 'include',
+    headers,
+    credentials: 'omit',
     body: JSON.stringify({ query, variables }),
     signal,
   })

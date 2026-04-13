@@ -9,6 +9,11 @@ export function AuthProvider({ children }) {
   const loadViewer = useCallback(async () => {
     setIsLoading(true)
     try {
+      const ok = await authApi.ensureValidAccessToken()
+      if (!ok) {
+        setViewer(null)
+        return
+      }
       const data = await authApi.fetchViewer()
       setViewer(data?.viewer ?? null)
     } catch {
@@ -30,12 +35,9 @@ export function AuthProvider({ children }) {
     return data
   }, [loadViewer])
 
-  const logout = useCallback(async () => {
-    try {
-      await authApi.logout()
-    } finally {
-      setViewer(null)
-    }
+  const logout = useCallback(() => {
+    authApi.logout()
+    setViewer(null)
   }, [])
 
   const value = useMemo(
