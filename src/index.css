@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,10 +6,7 @@
 body {
   margin: 0;
   font-family:
-    'Malgun Gothic',
-    '맑은 고딕',
-    'Apple SD Gothic Neo',
-    'Noto Sans KR',
+    "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR",
     sans-serif;
   font-size: 12px;
   color: #333;
