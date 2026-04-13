@@ -1,3 +1,5 @@
+import { getGraphqlUri } from '../apollo/graphqlEndpoint'
+
 function normalizeGraphQLError(payload) {
   const message =
     payload?.errors?.map((e) => e.message).filter(Boolean).join('\n') ||
@@ -9,7 +11,7 @@ function normalizeGraphQLError(payload) {
 }
 
 export async function gqlRequest({ query, variables, signal }) {
-  const res = await fetch('/graphql', {
+  const res = await fetch(getGraphqlUri(), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     credentials: 'include',

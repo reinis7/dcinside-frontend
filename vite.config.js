@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
           target: apiOrigin,
           changeOrigin: true,
           secure: false,
+          // 세션 쿠키를 개발 오리진(localhost)에서 유지시키기 위한 rewrite.
+          // 백엔드가 Set-Cookie에 Domain을 박아 내려주면 브라우저가 localhost에 저장하지 못합니다.
+          cookieDomainRewrite: "localhost",
+          cookiePathRewrite: "/",
         },
       },
     },
