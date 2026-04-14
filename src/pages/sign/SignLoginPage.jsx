@@ -79,36 +79,27 @@ export function SignLoginPage() {
           </label>
         </div>
 
-        {errorMsg ? <div className="rounded border border-[#f2b8b5] bg-[#fff5f5] px-3 py-2 text-[#d31900]">{errorMsg}</div> : null}
+        {errorMsg ? (
+          <div className="rounded border border-[#f2b8b5] bg-[#fff5f5] px-3 py-2 text-[#d31900]">{errorMsg}</div>
+        ) : null}
 
-        <div className="flex justify-end">
+        <div className="flex items-center gap-3">
           <button
             type="submit"
+            disabled={!canLogin || isSubmitting}
             className={
               canLogin && !isSubmitting
-                ? 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white'
-                : 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#b1b1b1] bg-[#d8d8d8] px-4 text-[12px] text-[#8a8a8a]'
+                ? 'inline-flex h-[32px] min-w-[72px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white'
+                : 'inline-flex h-[32px] min-w-[72px] items-center justify-center rounded-sm border border-[#b1b1b1] bg-[#d8d8d8] px-4 text-[12px] font-semibold text-[#8a8a8a]'
             }
-            disabled={!canLogin || isSubmitting}
           >
             로그인
           </button>
+          <Link to="/sign/join/agree" className="text-[#334499] hover:underline">
+            회원가입
+          </Link>
         </div>
       </form>
-
-      <div className="mt-4 flex items-center gap-2 text-[12px] text-[#666]">
-        <Link to="/sign/join/agree" className="text-[#334499] hover:underline">
-          고정닉 신청
-        </Link>
-        <span>|</span>
-        <Link to="/sign/help/find-id" className="text-[#334499] hover:underline">
-          식별 코드 찾기
-        </Link>
-        <span>|</span>
-        <Link to="/sign/help/reset-password" className="text-[#334499] hover:underline">
-          비밀번호 찾기
-        </Link>
-      </div>
     </section>
   )
 }

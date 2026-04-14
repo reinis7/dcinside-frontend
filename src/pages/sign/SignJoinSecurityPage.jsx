@@ -59,7 +59,7 @@ export function SignJoinSecurityPage() {
             setErrorMsg('')
             setIsSubmitting(true)
             try {
-              const agree = joinForm?.agree ?? { terms: false, privacy: false, marketing: false }
+              const agree = location.state?.agree ?? { terms: false, privacy: false, marketing: false }
               const registerData = await registerUser({
                 username: joinForm?.userId ?? '',
                 password: joinForm?.password ?? '',

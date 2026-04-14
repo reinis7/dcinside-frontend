@@ -1,5 +1,15 @@
 const STORAGE_KEY = 'dcinside.auth'
 
+/** @type {string | null} */
+let cachedRaw = null
+/** @type {Record<string, unknown> | null} */
+let cachedParsed = null
+
+function invalidateCache() {
+  cachedRaw = null
+  cachedParsed = null
+}
+
 /**
  * @typedef {object} StoredJwtSession
  * @property {string} accessToken
@@ -12,11 +22,22 @@ const STORAGE_KEY = 'dcinside.auth'
 export function loadTokens() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
+    if (raw === cachedRaw) return cachedParsed
+
+    cachedRaw = raw
+    if (!raw) {
+      cachedParsed = null
+      return null
+    }
     const parsed = JSON.parse(raw)
-    if (!parsed?.accessToken || !parsed?.refreshToken) return null
+    if (!parsed?.accessToken || !parsed?.refreshToken) {
+      cachedParsed = null
+      return null
+    }
+    cachedParsed = parsed
     return parsed
   } catch {
+    invalidateCache()
     return null
   }
 }
@@ -36,10 +57,12 @@ export function saveTokensFromAuthPayload(payload) {
     refreshExpiresAt: payload?.refreshTokenExpiresAt ?? payload?.refreshExpiresAt ?? null,
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
+  invalidateCache()
 }
 
 export function clearTokens() {
   localStorage.removeItem(STORAGE_KEY)
+  invalidateCache()
 }
 
 export function getAccessToken() {

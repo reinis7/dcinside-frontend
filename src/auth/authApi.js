@@ -7,7 +7,37 @@ import {
   saveTokensFromAuthPayload,
 } from './jwtStorage'
 
+/** 동시에 여러 요청이 만료 토큰을 감지해도 리프레시는 한 번만 실행 */
+let refreshInFlight = null
+
+function isUnauthError(err) {
+  // Apollo v4: CombinedGraphQLErrors -> err.errors[]
+  const gqlErrors = err?.errors ?? err?.graphQLErrors
+  if (Array.isArray(gqlErrors)) {
+    for (const e of gqlErrors) {
+      const code = e?.extensions?.code
+      if (code === 'UNAUTHENTICATED' || code === 'FORBIDDEN') return true
+      const msg = e?.message
+      if (typeof msg === 'string' && /unauth|unauthorized|권한|인증|로그인/i.test(msg)) return true
+    }
+  }
+
+  const status =
+    err?.statusCode ??
+    err?.status ??
+    err?.networkError?.statusCode ??
+    err?.networkError?.status
+  if (status === 401 || status === 403) return true
+
+  return false
+}
+
 export async function fetchViewer({ signal } = {}) {
+  // viewer는 인증 의존 쿼리이므로, 만료/401이면 1회 리프레시 후 재시도합니다.
+  return fetchViewerOnce({ signal, allowRefreshRetry: true })
+}
+
+async function fetchViewerOnce({ signal, allowRefreshRetry }) {
   const query = gql`
     query Viewer {
       viewer {
@@ -18,46 +48,65 @@ export async function fetchViewer({ signal } = {}) {
       }
     }
   `
-  const { data } = await apolloClient.query({
-    query,
-    fetchPolicy: 'network-only',
-    context: { fetchOptions: { signal } },
-  })
-  return data
+  try {
+    const { data } = await apolloClient.query({
+      query,
+      fetchPolicy: 'network-only',
+      context: { fetchOptions: { signal } },
+    })
+    return data
+  } catch (err) {
+    if (!allowRefreshRetry) throw err
+    if (!isUnauthError(err)) throw err
+    if (!getRefreshToken()) throw err
+
+    await refreshSession({ signal })
+    return await fetchViewerOnce({ signal, allowRefreshRetry: false })
+  }
 }
 
 export async function refreshSession({ signal } = {}) {
+  if (refreshInFlight) return refreshInFlight
+
   const refreshToken = getRefreshToken()
   if (!refreshToken) return null
 
-  const mutation = gql`
-    mutation DcinsideRefresh($input: DCInsideRefreshTokenInput!) {
-      dcinsideRefreshToken(input: $input) {
-        authToken
-        refreshToken
-        authTokenExpiresAt
-        refreshTokenExpiresAt
-        user {
-          id
-          databaseId
+  refreshInFlight = (async () => {
+    const mutation = gql`
+      mutation DcinsideRefresh($input: DCInsideRefreshTokenInput!) {
+        dcinsideRefreshToken(input: $input) {
+          authToken
+          refreshToken
+          authTokenExpiresAt
+          refreshTokenExpiresAt
+          user {
+            id
+            databaseId
+          }
         }
       }
+    `
+
+    try {
+      const { data } = await apolloClient.mutate({
+        mutation,
+        variables: { input: { refreshToken } },
+        context: { skipAuth: true, fetchOptions: { signal } },
+      })
+
+      const payload = data?.dcinsideRefreshToken
+      if (payload?.authToken && payload?.refreshToken) {
+        saveTokensFromAuthPayload(payload)
+      } else {
+        clearTokens()
+      }
+      return data
+    } finally {
+      refreshInFlight = null
     }
-  `
+  })()
 
-  const { data } = await apolloClient.mutate({
-    mutation,
-    variables: { input: { refreshToken } },
-    context: { skipAuth: true, fetchOptions: { signal } },
-  })
-
-  const payload = data?.dcinsideRefreshToken
-  if (payload?.authToken && payload?.refreshToken) {
-    saveTokensFromAuthPayload(payload)
-  } else {
-    clearTokens()
-  }
-  return data
+  return refreshInFlight
 }
 
 /** 앱 부트·viewer 전에 호출: 액세스 없거나 곧 만료면 refresh */

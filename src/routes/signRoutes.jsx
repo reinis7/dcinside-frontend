@@ -60,7 +60,7 @@ function SignLayout() {
     <div className="min-h-screen bg-[#ececec] text-[#333]">
       <header className="bg-[#2f3d8f] text-white">
         <div className="mx-auto flex h-[56px] w-[980px] items-center justify-between px-1">
-          <Link to="/sign" className="block">
+          <Link to="/www" className="block">
             <img
               src="/snapshot/nstatic.dcinside.com/dc/w/images/dcin_logo.png"
               alt="dcinside"
@@ -68,33 +68,22 @@ function SignLayout() {
             />
           </Link>
           <nav className="flex items-center gap-2 text-[12px] text-white/90">
-            <Link to="/sign/join/agree" className="hover:underline">
+            <Link to="/gall" className="hover:underline">
               갤러리
             </Link>
             <span>|</span>
-            <Link to="/sign/login?s_url=%2Fwww" className="hover:underline">
+            <Link to="/gall/m" className="hover:underline">
               마이너갤
             </Link>
             <span>|</span>
-            <Link to="/sign/help/find-id" className="hover:underline">
+            <Link to="/gall/n" className="hover:underline">
               미니갤
             </Link>
             <span>|</span>
-            <Link to="/www" className="hover:underline">
+            <Link to="/gall/p" className="hover:underline">
               인물갤
             </Link>
             <span>|</span>
-            <Link to="/sign" className="hover:underline">
-              갤로그
-            </Link>
-            <span>|</span>
-            <Link to="/sign/join/agree" className="hover:underline">
-              이벤트
-            </Link>
-            <span>|</span>
-            <Link to="/sign/join/agree" className="hover:underline">
-              디시콘
-            </Link>
           </nav>
         </div>
       </header>
@@ -103,7 +92,7 @@ function SignLayout() {
         <Routes>
           <Route index element={<SignHomePage />} />
           <Route path="login" element={<SignLoginPage />} />
-          <Route path="register" element={<SignRegisterPage />} />
+          <Route path="register" element={<Navigate to="/sign/join/agree" replace />} />
           <Route path="join/agree" element={<SignJoinAgreePage />} />
           <Route path="join/info" element={<SignJoinInfoPage />} />
           <Route path="join/security" element={<SignJoinSecurityPage />} />

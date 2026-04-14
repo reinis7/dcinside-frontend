@@ -7,71 +7,62 @@ function WwwLayout() {
   return (
     <div className="min-h-screen bg-[#f3f3f3] text-[#333]">
       <header className="border-b border-[#d3d3d3] bg-white">
-        <div className="mx-auto flex h-[58px] w-[1050px] items-center justify-between px-1">
+        <div className="mx-auto flex h-[78px] w-[1050px] items-center justify-between px-1">
           <Link to="/www" className="block">
             <img
               src="/snapshot/nstatic.dcinside.com/dc/w/images/dcin_logo.png"
               alt="dcinside"
-              className="h-[28px] w-auto"
+              className="h-[40px] w-auto"
             />
           </Link>
 
           <form className="flex w-[560px] items-stretch gap-0">
             <input
-              className="h-[30px] flex-1 rounded-l border border-[#2f3d8f] px-3 text-[12px] outline-none"
+              className="h-[38px] flex-1 rounded-l border border-[#2f3d8f] px-3 text-[13px] outline-none"
               placeholder="갤러리 & 통합검색"
             />
             <button
               type="button"
-              className="h-[30px] w-[44px] rounded-r border border-[#2f3d8f] bg-[#2f3d8f] text-[12px] font-bold text-white"
+              className="h-[38px] w-[52px] rounded-r border border-[#2f3d8f] bg-[#2f3d8f] text-[13px] font-bold text-white"
+              aria-label="검색"
             >
-              ▶
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                className="mx-auto block"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.5-3.5" />
+              </svg>
             </button>
           </form>
 
-          <div className="flex items-center gap-3 text-[12px] text-[#666]">
-            <Link to="/sign/login?s_url=%2Fwww" className="hover:underline">
-              로그인
-            </Link>
-            <span>|</span>
-            <Link to="/sign/join/agree" className="hover:underline">
-              회원가입
-            </Link>
-            <span>|</span>
-            <Link to="/www/my" className="hover:underline">
-              마이
-            </Link>
-          </div>
+          <div />
         </div>
 
         <div className="bg-[#2f3d8f] text-white">
-          <div className="mx-auto flex h-[34px] w-[1050px] items-center justify-between px-1 text-[12px] font-bold">
-            <nav className="flex items-center gap-4">
-              <Link to="/www" className="hover:underline">
+          <div className="mx-auto flex h-[42px] w-[1050px] items-center justify-between px-1 text-[13px] font-bold">
+            <nav className="flex items-center gap-5">
+              <Link to="/gall" className="hover:underline">
                 갤러리
               </Link>
-              <Link to="/www" className="hover:underline">
+              <Link to="/gall/m" className="hover:underline">
                 마이너갤
               </Link>
-              <Link to="/www" className="hover:underline">
+              <Link to="/gall/n" className="hover:underline">
                 미니갤
               </Link>
-              <Link to="/www" className="hover:underline">
+              <Link to="/gall/p" className="hover:underline">
                 인물갤
               </Link>
-              <Link to="/www" className="hover:underline">
-                갤로그
-              </Link>
-              <Link to="/www" className="hover:underline">
-                더보기
-              </Link>
             </nav>
-            <button
-              type="button"
-              className="h-[22px] rounded border border-white/40 bg-white/10 px-2 text-[11px] font-bold text-white hover:bg-white/20"
-            >
-              다크 테마(임시)
-            </button>
           </div>
         </div>
       </header>

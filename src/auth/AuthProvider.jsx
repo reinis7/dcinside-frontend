@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { apolloClient } from '../apollo/apolloClient'
 import * as authApi from './authApi'
 import { AuthContext } from './authContext'
 
@@ -27,6 +28,21 @@ export function AuthProvider({ children }) {
     void loadViewer()
   }, [loadViewer])
 
+  // 다른 탭에서 로그인/로그아웃해도 현재 탭 UI를 즉시 동기화
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== 'dcinside.auth') return
+      if (!e.newValue) {
+        setViewer(null)
+        void apolloClient.clearStore().catch(() => {})
+        return
+      }
+      void loadViewer()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [loadViewer])
+
   const login = useCallback(async ({ userId, password }) => {
     const data = await authApi.login({ userId, password })
     const user = data?.login?.user ?? null
@@ -38,6 +54,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     authApi.logout()
     setViewer(null)
+    void apolloClient.clearStore().catch(() => {})
   }, [])
 
   const value = useMemo(

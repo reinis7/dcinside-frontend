@@ -11,15 +11,12 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     server: {
       proxy: {
-        // WordPress(GraphQL) 개발 서버로 프록시.
-        // 프론트는 항상 같은 오리진(/graphql)만 호출하고,
-        // 세션 쿠키는 credentials: 'include'로 자동 처리합니다.
+        // WordPress(GraphQL) 개발 프록시 — 프론트는 `/graphql` 동일 오리진만 사용.
+        // (JWT 기본. 백엔드가 Set-Cookie를 내려도 로컬에서 쿠키 도메인 맞출 때 참고.)
         "/graphql": {
           target: apiOrigin,
           changeOrigin: true,
           secure: false,
-          // 세션 쿠키를 개발 오리진(localhost)에서 유지시키기 위한 rewrite.
-          // 백엔드가 Set-Cookie에 Domain을 박아 내려주면 브라우저가 localhost에 저장하지 못합니다.
           cookieDomainRewrite: "localhost",
           cookiePathRewrite: "/",
         },

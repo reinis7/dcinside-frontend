@@ -1,0 +1,809 @@
+<body>
+  <!--스킵 내비게이션-->
+  <div class="skip">
+    <a href="#search_wrap"><span>통합검색 바로가기</span></a>
+	<a href="#container"><span>본문영역 바로가기</span></a>
+    <a href="#bottom_listwrap"><span>페이지 하단 게시물 리스트 바로가기</span></a>
+    <a href="#login"><span>페이지 하단 로그인영역 바로가기</span></a>
+  </div>
+  <!-- //스킵 내비게이션-->
+  <div id="top" class="dcwrap ">
+    <!-- 상단 -->
+	<header class="dcheader typea">
+  <div class="dchead">
+	<!-- 로고영역 -->
+	<h1 class="dc_logo">
+		<script type="text/javascript">
+    		logo_img = "https://nstatic.dcinside.com/dc/w/images/dcin_logo.png";
+    		logo_prefix = "m";
+    	</script>
+	  <a href="https://www.dcinside.com/">
+		<img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="디시인사이드" class="logo_img  wizmage-pattern-bg-img wizmage-cls wizmage-shade-5" fetchpriority="high" title="디시인사이드" srcset="" style="width: 211px; height: 45px;">
+	  </a>
+	  <a href="https://gall.dcinside.com/m">
+	  	<img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="갤러리" class="logo_img2  wizmage-pattern-bg-img wizmage-cls wizmage-shade-3" title="갤러리" srcset="" style="width: 96px; height: 45px;">
+	  </a>
+	</h1>
+	<!-- //로고영역 -->
+
+	<div id="search_wrap" class="wrap_search">
+	  <h2 class="blind">갤러리 검색</h2> 
+	   <!-- 갤러리 통합검색 -->
+	  <form id="searchform" name="search_process" class="sch_smit" method="get" accept-charset="utf-8" action="" role="search" onsubmit="return globalSearch(this);">
+		<fieldset>
+		  <legend class="blind">통합검색</legend>
+		  <div class="top_search clear">
+			<div class="inner_search">
+			  <input class="in_keyword" type="text" name="search" id="preSWord" title="검색어 입력" value="" placeholder="갤러리 &amp; 통합검색" accesskey="f" autocomplete="off" onfocus="show_search_keywords(this)">
+			</div>
+			<button type="submit" class="sp_img bnt_search wizmage-pattern-bg-img wizmage-cls wizmage-shade-7" id="searchSubmit"><span class="blind">검색</span></button>
+		  </div><div class="auto_wordwrap" style="left:0px;top:46px;display:none"></div>
+		</fieldset>
+	  </form>
+	  <!-- //갤러리 통합검색 -->
+                
+             <!-- 검색 자동완성 레이어-->
+	  <div class="auto_wordwrap" style="left:0;top:45px;display:none"><!--자동완성 레어이 : display:block -->
+	  </div>
+	  <!-- //검색 자동완성 레이어 -->
+
+	</div>
+    <div class="area_links clear">
+      <ul class="fl clear">
+	  		<li><a href="https://gall.dcinside.com/">갤러리</a></li> 	  		  		<li><a href="https://gall.dcinside.com/n">미니갤</a></li> 	  		<li><a href="https://gall.dcinside.com/p">인물갤</a></li> 		<li><a href="https://gallog.dcinside.com">갤로그</a></li>
+		<li><a href="//h5.dcinside.com/game/main">디시게임</a></li>
+				<li><a href="https://event.dcinside.com">이벤트</a></li>
+		<li><a href="https://mall.dcinside.com/?from=A08">디시콘</a></li>
+				
+<script id="scrapdone-tmpl" type="text/x-jquery-tmpl">
+<div class="pop_wrap type3 " style="${lyr_xy}" id="scrapdone_recom">
+  <div class="pop_content lyscrap_save">
+    <div class="pop_head"><h3>스크랩</h3></div>
+    <div class="inner ">
+      <div class="cont">
+
+        {{if success}}
+        <p>‘{{= defalut.name}}’ 폴더에 저장되었습니다.</p>
+
+        <div class="folders">
+          <strong class="tit">저장 폴더 변경</strong>
+          <div class="select_box select_arraybox" onclick="toggleFolderBox()">
+              <div class="select_area"><em class="folder_name" data-no="{{= defalut.no}}">{{= defalut.name}}</em><em class="sp_img icon_option_more"></em></div>
+              <ul class="option_box" style="left:-1px;top:23px;display: none;">
+                {{each folders}}
+                <li data-no="${$value.no}" onclick="chg_folder(this, event)">${$value.name}</li>
+                {{/each}}
+              </ul>
+          </div>
+        </div>
+        {{else}}
+        <p>이미 저장된 글입니다.</p>
+        <p>스크랩에서 삭제하시겠습니까?</p>
+        {{/if}}
+
+      </div>
+      <div class="btn_box">
+      {{if success}}
+        <button type="button" onclick="chg_folder_submit()" class="btn_blue small">확인</button>
+      {{else}}
+        <button type="button" onclick="$(this).closest('#scrapdone_recom').remove();" class="btn_grey small">취소</button>
+        <button type="button" class="btn_blue small" onclick="{{= del_btn}}">확인</button>
+      {{/if}}
+      </div>
+      <div class="bottombox"><button type="button" class="btn_scrapmore memberscrap">스크랩 보기</button></div>
+    </div>
+  </div>
+  <button type="button" class="poply_bgblueclose" onclick="$(this).closest('#scrapdone_recom').remove();"><span class="blind">레이어 닫기</span><em class="sp_img icon_bgblueclose"></em></button>
+</div>
+</script>		<li class="area_nickname"><a href="javascript:;" id="btn_user_lyr" class="btn_user_data">badGuy님</a><!-- li와 a태그 사이 여백 없이 요청드립니다. / 레이어 펼침 시 on 클래스 삽입 -->
+            <!-- #user_data_lyr.user_data -->
+            <div id="user_data_lyr" class="user_data" style="right:0;top:25px;display:none;">
+              <ul class="user_data_list">
+                <li>
+                  <a href="https://gallog.dcinside.com/lamp2916">MY갤로그<em class="sp_img icon_go"></em></a>
+                </li>
+                <li>
+                  <a href="https://sign.dcinside.com/myinfo/modify">고정닉정보<em class="sp_img icon_go"></em></a>
+                </li>
+                <li><a href="javascript:;" onclick="myFavorite('50%')">즐겨찾기</a></li>
+                <li><a href="javascript:;" id="my_minor_btn_h" onclick="toggle_my_minor_pop(this)">운영/가입</a></li>
+                <li><a class="my_scrap_pop" style="cursor: pointer">스크랩</a></li>
+                <li><a href="javascript:;" onclick="alarmList($('.icon_noti', this), 'new','H')">알림 리스트</a></li>
+              </ul>
+
+            </div>
+            <!-- //#user_data_lyr.user_data -->
+          </li> 
+		<li><a class="btn_top_loginout" href="https://sign.dcinside.com/logout?s_url=https%3A%2F%2Fgall.dcinside.com%2Fm%2Fcreate">로그아웃</a></li>
+				
+	  </ul>
+	  <div class="fl darkmodebox">
+		  <a href="javascript:;" class="darkonoff" onclick="darkmode()"><em class="sp_img icon_tdark"></em>야간모드</a>
+		  <div class="pop_tipbox join_tip dark" onclick="$(this).hide();used_darkmode();" style="cursor:pointer;top:25px;left:-35px;display:none">
+			<div class="inner">
+			  <p class="join_txt">야간 모드를 이용해 보세요</p>
+			</div>
+		  </div>
+	  </div>
+	</div>
+	  </div>
+</header> 
+    <!-- GNB -->
+    <div class="gnb_bar">
+      <nav class="gnb clear">
+        <h2 class="blind">GNB</h2>
+        <ul class="gnb_list clear">
+          <li>
+            <a class="hover_gnb link_gnb " href="https://gall.dcinside.com" url_code="gallery">갤러리</a>
+			<span class="gnb_area" style="display:block;width:77px;height:12px;position:absolute;left:0;bottom:0;"></span>
+            <!-- 2차메뉴 -->
+            <div class="depth2 gall" style="left:0;display:none"><!--2차메뉴 열림 : display:block -->
+              <span class="sp_img depth_bg"></span>
+              <ul class="depth2_list">
+                <li><a href="https://game.dcinside.com">게임</a></li>
+                <li><a href="https://enter.dcinside.com">연예/방송</a></li>
+                <li><a href="https://sports.dcinside.com">스포츠</a></li>
+                <li><a href="https://edu.dcinside.com">교육/금융/IT</a></li>
+                <li><a href="https://travel.dcinside.com">여행/음식/생물</a></li>
+                <li><a href="https://hobby.dcinside.com">취미/생활</a></li>
+              </ul>
+            </div>
+            <!-- //2차메뉴 -->
+          </li>
+          <li><a href="//gall.dcinside.com/m" class="link_gnb on" url_code="mgallery">마이너갤</a></li>
+          <li><a href="//gall.dcinside.com/n" class="link_gnb " url_code="migallery">미니갤</a></li>
+          <li><a href="//gall.dcinside.com/p" class="link_gnb " url_code="prgallery">인물갤</a></li>
+          <li><a href="https://gallog.dcinside.com" class="link_gnb" url_code="gallog">갤로그</a></li> 
+          <!--li><a href="https://dctrend.rankify.best/" class="link_gnb" url_code="dctrend">디시트렌드</a></li-->	
+          <li class="gnb_more"> <!--230918 .gnb_more 추가-->
+            <button type="button" class="btn_depth"><span class="blind">더보기</span></button> <!--230918 메뉴 열릴때 .open 추가-->
+            <!-- 2차메뉴 -->
+            <div class="depth2 more" style="left: -7px; opacity: 1; display: none;"><!--2차메뉴 열림 : display:block -->
+              <span class="sp_img depth_bg"></span>
+              <ul class="depth2_list">
+                <li><a href="#" class="link_gnb" url_code="jbox_new" onclick="window.open('https://santapond.com/main?jcd=dc', '_blank'); return false;">도끼쇼핑</a></li>
+                <li><a href="https://h5.dcinside.com" class="link_gnb" url_code="dcgame">디시게임</a></li>
+                <li><a href="https://event.dcinside.com" class="link_gnb" url_code="event">이벤트</a></li>
+                <li><a href="https://mall.dcinside.com/?from=A08" class="link_gnb" url_code="dccon">디시콘</a></li>
+              </ul>
+            </div>
+            <!-- //2차메뉴 -->
+          </li>
+          <!-- <li><a href="https://dcinside.pickmaker.com?utm_source=mainbanner_live&utm_medium=display&utm_campaign=mainbanner_pc&utm_id=dcinside&marketing-id=dc_mainbanner_pc_live" target="_blank" class="link_gnb deco"><span>픽메이커</span></a></li> -->
+        
+        
+        </ul>
+
+        <!-- 어제 게시글,댓글 등록 -->
+        <div class="gall_exposure">
+          
+          
+          
+          
+        <div class="reply" style=""><a href="https://gall.dcinside.com/board/lists/?id=dclottery">어제 <em class="num" id="total_reple_count">2,804,455개</em> 댓글 등록</a></div><div class="gall" style="">총 갤러리 수 <em class="num" id="total_gallery_count">93,914개</em></div><div class="ltr" style=""><a href="https://gall.dcinside.com/board/lists/?id=dclottery">디시 로터리 응모</a></div><div class="posts" style=""><a href="https://gall.dcinside.com/board/lists/?id=dclottery">어제 <em class="num" id="total_content_count">913,999개</em> 게시글 등록</a></div></div>
+        <!-- /어제 게시글,댓글 등록 -->
+      </nav>
+    </div>
+    <!-- //GNB -->
+    
+	<!-- 최근방문 갤러리 -->
+	<script type="text/javascript" src="/_js/lately_visit_gallery.js?v=240625"></script>
+<script type="text/javascript">
+var f_u_no = '0a23cdc656d48b';
+lately_gall_init('', '', 'M');
+</script>
+
+<script id="lately_galls-tmpl" type="text/x-jquery-tmpl">
+	<li class="lately_gall_${id}"><a href="https://${link}" class="lately_log" section="${id}">${name}</a>{{if type == 'MI'}}<em class="icon_mini">미니갤러리</em>{{else type == 'PR'}}<em class="icon_person">인물갤러리</em>{{else type == 'M'}}<em class="icon_minor">ⓜ</em>{{/if}}<button type="button" class="btn_visit_del" data-id="${id}" data-gtype="${type}"><span class="blind">삭제</span><em class="icon_visit_del"></em></button></li>
+</script>
+<script id="lately_gallsall-tmpl" type="text/x-jquery-tmpl">						
+	<li class="lately_gall_${id}{{if type == 'MI'}} mi{{else type == 'PR'}} pr{{else type == 'M'}} m{{/if}}"><a href="https://${link}" class="lately_log" section="${id}">${name}</a>{{if type == 'MI'}}<em class="icon_mini">미니갤러리</em>{{else type == 'PR'}}<em class="icon_person">인물갤러리</em>{{else type == 'M'}}<em class="icon_minor">ⓜ</em>{{else}}{{/if}}<button type="button" class="btn_visit_del" data-id="${id}" data-gtype="${type}"><span class="blind">삭제</span><em class="icon_visit_del"></em></button></li>
+</script>
+<script id="favorite_galls-tmpl" type="text/x-jquery-tmpl">
+	<li><a href="https://gall.dcinside.com/{{if type == 'MI'}}mini/{{else type == 'PR'}}person/{{else type == 'M'}}mgallery/{{/if}}${code_id}">${name}</a>{{if type == 'MI'}}<em class="icon_mini">미니갤러리</em>{{else type == 'PR'}}<em class="icon_person">인물갤러리</em>{{else type == 'M'}}<em class="icon_minor">ⓜ</em>{{/if}}</li>
+</script>
+<!-- 즐겨찾기 갤러리 리스트-->
+<script id="favorite_gallsall-tmpl" type="text/x-jquery-tmpl">	
+	<li {{if type == 'MI'}}class="mi" {{else type == 'PR'}}class="pr" {{else type == 'M'}} class="m" {{/if}} style ='display:none;'><a href="http://gall.dcinside.com/{{if type == 'MI'}}mini/{{else type == 'PR'}}person/{{else type == 'M'}}mgallery/{{/if}}${code_id}">${name}</a>{{if type == 'MI'}}<em class="icon_mini">미니갤러리</em>{{else type == 'PR'}}<em class="icon_person">인물갤러리</em>{{else type == 'M'}}<em class="icon_minor">ⓜ</em>{{/if}}</li>
+</script>
+
+<div class="visit_bookmark" id="visit_history">
+      <!-- newvisit_history.vst 최근 방문 -->
+      <div class="newvisit_history vst"><!-- 최근 방문 클래스 .newvisit_history.vst /  즐겨찾기 클래스 .newvisit_history.bookmark -->
+        <h3 class="tit vst_title l_div_style" style="">최근 방문 갤러리</h3>
+        <h3 class="tit bookmark_title f_div_style" style="display:none">즐겨찾기 갤러리</h3>
+        <button type="button" class="btn_open" onclick="openLately()"><span class="blind">레이어 열기</span><em class="sp_img icon_listmore"></em></button>
+        <button type="button" class="bnt_visit_prev" style="display:none"><span class="blind">이전</span><em class="sp_img icon_prev"></em></button>
+        <div class="newvisit_box">
+          <!-- 최근방문 갤러리 리스트-->
+          <ul class="newvisit_list vst_listbox l_div_style ui-draggable ui-draggable-handle" style=""></ul>
+          
+          <ul class="newvisit_list  bkmark_listbox f_div_style" style="display:none"></ul>
+           
+          <!-- //즐겨찾기 갤러리 리스트-->
+
+        </div>
+
+        <button type="button" class="bnt_visit_next" style="display:none"><span class="blind">다음</span><em class="sp_img icon_next"></em></button>
+        <button type="button" class="bnt_newvisit_more" style="display:none" onclick="openLately()">전체</button>
+
+        <!-- 최근방문 / 즐겨찾기 레이어 -->
+        <div class="pop_wrap gray1px" style="left:0;top:37px;display:none" id="visit_history_lyr">
+          <div class="pop_content under_catelist newvisit_layer">
+            <div class="tabs">
+              <ul class="tabslist clear">
+                <li class="tab_l on"><button type="button" onclick="tabLately('lately')">최근 방문</button></li>
+                <li class="tab_f"><button type="button" onclick="tabLately('favorite')">즐겨찾기</button></li>
+              </ul>
+            </div>
+
+            <div class="toptab_content">
+              <div class="visit_div l_div_style"><p class="empty_visit empty_vi">최근 방문 목록이 없습니다.</p></div>
+              
+			<div class="favorite_div f_div_style" style="display: none;"><p class="empty_visit">즐겨찾기 목록이 없습니다.</p></div>
+            </div>
+          </div>
+        </div>
+        <!-- // 최근방문 / 즐겨찾기 레이어 -->
+        <div id="my_favorite" class="pop_wrap type3" style="right:-1px;top:79px;display:none"></div>
+      </div>
+      <!-- //newvisit_history.visit 최근 방문 -->
+    </div>
+  <!-- //220419 visit_bookmark 최근방문 / 즐겨찾기-->
+  <!-- //최근방문 갤러리 리스트-->
+	 
+    
+    
+    <main id="container" class="minor_make">
+	<header>
+		<div class="page_head clear">
+			<div class="fl">
+				<h2>
+					<a href="javascript:;"><span class="fixtit">마이너 갤러리</span> 만들기</a><span class="stxt">(만들기는 6개까지 가능합니다.)</span>
+				</h2>
+			</div>
+		</div>
+	</header>
+	<div class="minor_make_wrap">
+		<section>
+			<h2 class="make_guide_tit">마이너 갤러리는?</h2>
+			<div class="minor_make_guide clear">
+				<p class="make_guide_txt">누구나 갤러리를 개설할 수 있습니다. 갤러리의 운영 권한 및 의무가 개설자에게 부여됩니다.</p>
+				<div class="fl">
+					<img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="승격전 마이너 갤러리는 매니저(개설자)가 운영, 승격 후의 갤러리는 매지너 권한 회수 디시인사이드에서 직접 운영합니다." title="승격전 마이너 갤러리는 매니저(개설자)가 운영, 승격 후의 갤러리는 매지너 권한 회수 디시인사이드에서 직접 운영합니다." class="  wizmage-pattern-bg-img wizmage-cls wizmage-shade-5" srcset="" style="width: 558px; height: 301px;">
+				</div>
+				<div class="minor_make_info fl">
+					<div>
+						<strong class="tit">승격 안내</strong>
+						<p>영화, 드라마 등 일부 마이너 갤러리는 심사 후 메인 갤러리로 승격됩니다.</p>
+                		<p>승격 여부는 전적으로 회사에 의해 결정되며, 승격 시 매니저 권한은 회수됩니다.</p>
+					</div>
+					<div class="txt_attention">
+						<strong class="tit">유의 사항</strong>
+						<p>메인 갤러리 승격을 위해서는 간결하고 정확한 단어형 이름을 입력하셔야 합니다.</p>
+						<p>
+							동일한 주제의 메인 갤러리가 있을 경우 승격이 불가능합니다.
+							<button type="button" class="btn_guide_view" onclick="toggle_layer($('#elev_note'))">자세히보기</button>
+						</p>
+					</div>
+					<div id="elev_note" class="pop_wrap type2" style="right: 0; top: 170px; display: none">
+						<div class="pop_content attention_box">
+							<div class="pop_head dashed">
+								<strong>승격 유의사항</strong>
+							</div>
+							<div class="inner">
+								<b>다음과 같은 마이너 갤러리는 승격이 어렵습니다.</b>
+								<ol class="attention_list">
+									<li>1. 이름이 간결하지 않은 경우(서술형, 문장형 X)</li>
+									<li>2. 동일한 주제의 메인 갤러리가 있을 경우</li>
+									<li>3. 도배, 음란 등 부적절한 게시물이 많을 경우</li>
+									<li>4. 주소가 복잡하고 이름과 맞지 않는 경우</li>
+									<li>5. 이름에 맞지 않은 카테고리 선택 시</li>
+								</ol>
+								<p class="tiptxt">
+									<em class="sp_img tip_deco"></em>승격 시에 이름, 주소, 카테고리는 변경될 수 있습니다.
+								</p>
+							</div>
+						</div>
+						<button type="button" class="under poply_close" onclick="toggle_layer($('#elev_note'))">
+							<span class="blind">갤러리 전체보기 레이어 닫기</span>
+							<em class="sp_img icon_lyclose"></em>
+						</button>
+					</div>
+				</div>
+			</div>
+		</section>
+		<section>
+			<h2 class="blind">마이너 갤러리 신청 정보입력</h2>
+			<form method="post" id="frmCreate" name="frmCreate" action="/m/regist" onsubmit="return mgalleryCreate(this)">
+				<input type="hidden" name="ci_t" value="">
+				<div class="minor_make_form clear">
+					<div id="make_form_wrap" class="make_form_cont">
+						<fieldset>
+							<legend class="blind">마이너 갤러리 신청 정보입력</legend>
+							<div class="form_group">
+								<div class="set_content name clear">
+									<div class="set_tit">
+										<label for="mg_name">이름</label><em class="required_input">*</em>
+									</div>
+									<div class="cont_box clear">
+										<div class="cont_input_box">
+											<input class="t_input chk_str_length" id="mg_name" name="mg_name" type="text" placeholder="마이너 갤러리 이름을 간단히 넣어주세요." onfocusout="return chk_create_name(false)"> <span class="basic_tit">마이너 갤러리</span>
+										</div>
+										<span class="max_txt"><span>0</span>/<b>12</b></span>
+										<p class="tiptxt red mname_alert_txt_fix">
+											<em class="sp_img tip_deco"></em>이름은 개설 후, 7일 내 1회만 수정할 수 있습니다.
+										</p>
+										<p class="tiptxt red mname_alert_txt_fix">
+											<em class="sp_img tip_deco"></em>동일한 주제의 마이너 갤러리는 개설이 불가능합니다.
+										</p>
+										<p class="tiptxt mname_alert_txt">
+											<b class="font_red"></b> <span class="alert_msg"></span> <a class="link_visit" target="_blank" href="" style="display: none;">방문하기&gt;</a>
+										</p>
+									</div>
+								</div>
+							</div>
+							<div class="form_group">
+								<div class="set_content desc clear">
+									<div class="set_tit">
+										<label for="mg_desc">설명</label>
+									</div>
+									<div class="cont_box">
+										<textarea class="t_area chk_str_length" id="mg_desc" name="mg_desc" placeholder="마이너 갤러리에 대한 설명을 넣어주세요." onfocusout="return chk_create_desc(false)"></textarea>
+										<div class="clear">
+											<p class="tiptxt mdesc_alert_txt">
+												<b class="font_red"></b> <span class="alert_msg"></span>
+											</p>
+											<span class="max_txt"><span>0</span>/<b>200</b></span>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="form_group">
+								<div class="set_content adr clear">
+									<div class="set_tit">
+										<label for="mg_id">주소</label><em class="required_input">*</em>
+									</div>
+									<div class="cont_box clear">
+										<div class="cont_input_box">
+											<span class="basic_adr">https://gall.dcinside.com/</span> 
+											<input class="t_input chk_str_length" id="mg_id" name="mg_id" type="text" onfocusout="chk_create_id(false)">
+										</div>
+										<span class="max_txt"><span>0</span>/<b>20</b></span>
+										<p class="tiptxt red mid_alert_txt_fix">
+											<em class="sp_img tip_deco"></em>주소는 만들기 후 수정이 불가능합니다. 신중히
+											입력해주세요.
+										</p>
+										<p class="tiptxt mid_alert_txt">
+											<b class="font_red"></b> <span class="alert_msg"></span>
+										</p>
+									</div>
+								</div>
+							</div>
+							<div class="form_group">
+								<div class="set_content category clear">
+									<div class="set_tit">
+										<label for="mgallery_cate" onclick="$('#mgallery_cate').click()">카테고리</label><em class="required_input">*</em>
+									</div>
+									<div class="cont_box">
+										<div class="select_box select_arraybox ul_selectric">
+											<div id="mgallery_cate" class="select_area select_Cate">
+												카테고리를 선택해주세요.<em class="sp_img icon_option_more"></em>
+											</div>
+											<ul class="option_box select_Cate" select_cate="" style="left: -1px; top: 22px; display: none">
+												<li data-value="">카테고리를 선택해주세요.</li>
+                                                                                        <li data-value="26">연예</li>
+                                                                                        <li data-value="22">국내방송</li>
+                                                                                        <li data-value="31">해외방송</li>
+                                                                                        <li data-value="21">게임</li>
+                                                                                        <li data-value="12">취미</li>
+                                                                                        <li data-value="39">만화/애니</li>
+                                                                                        <li data-value="24">스포츠</li>
+                                                                                        <li data-value="25">스포츠스타</li>
+                                                                                        <li data-value="8">디지털/IT</li>
+                                                                                        <li data-value="15">교통/운송</li>
+                                                                                        <li data-value="7">음식</li>
+                                                                                        <li data-value="16">패션</li>
+                                                                                        <li data-value="23">음악</li>
+                                                                                        <li data-value="6">여행/풍경</li>
+                                                                                        <li data-value="9">합성</li>
+                                                                                        <li data-value="4">생물</li>
+                                                                                        <li data-value="40">건강/심리</li>
+                                                                                        <li data-value="13">학술</li>
+                                                                                        <li data-value="14">교육</li>
+                                                                                        <li data-value="42">공무원</li>
+                                                                                        <li data-value="27">대학</li>
+                                                                                        <li data-value="11">수능</li>
+                                                                                        <li data-value="20">직업</li>
+                                                                                        <li data-value="28">정치인/유명인</li>
+                                                                                        <li data-value="17">밀리터리</li>
+                                                                                        <li data-value="41">금융/재테크 </li>
+                                                                                        <li data-value="29">성공/계발</li>
+                                                                                        <li data-value="19">생활</li>
+                                                                                        <li data-value="30">지역</li>
+                                                                                        <li data-value="37">쇼핑/장터</li>
+                                                                                        <li data-value="10">정부/기관</li>
+                                                                                        <li data-value="35">기업</li>
+                                                                                        <li data-value="38">미디어</li>
+                                                                                        <li data-value="5">이슈</li>
+                                                                                        <li data-value="18">성인</li>
+                                                                                        <li data-value="34">기타</li>
+                                                                                        
+										</ul><input type="hidden" name="mg_category" value="">
+											<script>ul_selectric($('#make_form_wrap .select_box'), 'mg_category');</script>
+										</div>
+									</div>
+								</div>
+							</div>
+						
+												<div class="form_group">
+								<div class="set_content makereason clear">
+									<div class="set_tit">
+										<label for="create_reason">개설이유</label><em class="required_input">*</em>
+									</div>
+									<div class="cont_box clear">
+										<div class="cont_input_box">
+											<input class="t_input chk_str_length" id="create_reason" name="mg_reason" type="text" placeholder="운영자에게 전달되는 메세지입니다.">
+										</div>
+										<span class="max_txt"><span>0</span>/<b>100</b></span>
+										<p class="tiptxt">
+											<em class="sp_img tip_deco"></em>마이너 갤러리 개설은 이름, 설명, 주소, 개설
+											이유에 따라 승인 또는 반려될 수 있습니다.
+										</p>
+										<p class="tiptxt">
+											<em class="sp_img tip_deco"></em>개설 승인, 반려는 평일 정상근무 시간에 처리됩니다.
+										</p>
+									</div>
+								</div>
+							</div>
+												
+					</fieldset>
+					</div>
+					<div class="ex_cont clear">
+						<p class="fl tit">예시</p>
+						<div class="fr ex">
+							<fieldset>
+								<legend class="blind">마이너 갤러리 만들기 예시</legend>
+								<div class="form_group">
+									<div class="set_content name clear">
+										<div class="cont_box clear">
+											<div class="cont_input_box">
+												<input class="t_input" type="text" title="예시 문구" readonly="readonly" value="볼링"> <span class="basic_tit">마이너 갤러리</span>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="form_group">
+									<div class="set_content desc clear">
+										<div class="cont_box">
+											<textarea class="t_area" readonly="readonly">볼링 치는 사람들 여기로 오세요~</textarea>
+											<div class="clear">
+												<span class="max_txt"><span>18</span>/<b>200</b></span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</fieldset>
+						</div>
+					</div>
+				</div>
+			</form>
+			<div class="minor_make_chk clear">
+				<div class="fl agree_chk chk1">
+					<span class="checkbox"> 
+					<input type="checkbox" id="person_agree" name="person_agree" value="1"> <em class="checkmark"></em> <label for="person_agree">마이너 갤러리 개인정보보호정책에 동의합니다.</label>
+					<!--em삭제-->
+					</span>
+					<!-- 매니저의 개인정보보호의무 -->
+					<div class="scroll privacy">
+						<p>
+							<em class="sp_img tip_deco"></em>
+							<!--190419 추가-->
+							'마이너 갤러리 매니저'라 함은 마이너 갤러리 서비스 내 각 마이너 갤러리의 모든 운영권한을 갖는 '매니저'와 일부
+							운영권한을 갖는＇부매니저'를 말합니다.
+						</p>
+						<p class="mt_5">마이너 갤러리 매니저는 불필요한 개인정보를 수집하거나 처리하지 않도록 하며, 관련 법령 및
+							약관을 준수합니다.</p>
+						<dl>
+							<dt>1. 부정한 목적으로의 개인정보 처리 금지</dt>
+							<dd>금전적 이득 등을 위하여 부정한 목적으로 개인정보를 수집하거나 매매 등을 이용한 우회적인 개인정보 부정 판매
+								등이 적발될 경우, 디시인사이드는 관련 법령과 사이트 이용약관 및 마이너 갤러리 운영원칙 등에 따라 해당 마이너
+								갤러리에 대한 제재, 그리고 관련 법령에 따른 민형사상의 책임을 물을 수 있습니다.</dd>
+
+							<dt>2. 불필요한 개인정보에 대한 수집 및 이용 금지</dt>
+							<dd>불필요한 개인정보에 대한 수집, 이용을 해서는 안되며, 불가피하게 개인정보를 수집해야 하는 경우 최소한의
+								개인정보에 한해야 합니다. 또한, 관련 법령 및 이용약관, 운영원칙에 위배되지 않음을 합리적으로 증명할 수 있어야
+								합니다.</dd>
+
+							<dt>3. 개인정보의 수집 시 사전동의</dt>
+							<dd>개인정보를 수집하는 경우 반드시 사전에 '개인정보 항목, 수집목적, 보관기간, 개인정보의 수집을 거부할 권리
+								및 이로 인한 불이익'에 대해 명확히 고지하고, 정보주체(개인정보가 수집되는 다른 이용자)들의 개별 동의를 받아야
+								합니다.</dd>
+
+							<dt>4. 개인정보 제공의 금지</dt>
+							<dd>개인정보를 동의를 받아 수집한 경우라도 외부(수집한 사람을 제외한 모든 사람)에 제공하는 것은 원칙적으로
+								금지됩니다. 만약 외부에 제공하고자 하는 경우에는 정보주체에게 ‘제공받는 자, 제공하는 항목, 제공목적,
+								이용기간’을 명확히 고지하고 사전에 개별 동의를 받아야 합니다.</dd>
+
+							<dt>5. 주민등록번호 등 고유식별정보의 처리 금지</dt>
+							<dd>주민등록번호는 법령에 의하여 처리 근거가 있는 경우를 제외하고 어떤 목적으로도 처리할 수 없으며, 여권번호,
+								운전면허번호, 외국인 등록번호도 처리할 수 없습니다. 단, 불가피하게 처리가 필요한 경우에 한해 정보주체에게 사전에
+								개별 동의를 받아야 합니다.</dd>
+
+							<dt>6. 민감 정보의 처리 제한</dt>
+							<dd>사상/신념, 정치적 견해, 노동조합/정당의 가입/탈퇴, 건강 및 성생활 등에 관한 정보, 유전정보,
+								범죄경력’에 관한 정보는 법령에 의하여 처리 근거가 있는 경우를 제외하고 처리할 수 없습니다. 단, 불가피하게
+								처리가 필요한 경우, 정보 주체로부터 사전에 개인정보 활용 동의를 반드시 받은 후 처리를 할 수 있습니다.</dd>
+
+							<dt>7. 영리 목적의 개인정보 처리 금지</dt>
+							<dd>상품판매, 공동구매, 수강생 모집 등 여타의 영리 목적을 목적으로 개인정보를 처리하는 것은 어떠한 경우에도
+								금지됩니다.</dd>
+						</dl>
+						<p class="mt_5">그 밖에 위에 기재하지 않은 사항은 디시인사이드 개인정보처리방침, 이용약관, 마이너 갤러리
+							서비스 운영원칙 등에서 정한 바에 의합니다.</p>
+
+					</div>
+					<!--//매니저의 개인정보보호의무 -->
+				</div>
+				<div class="fl agree_chk chk2">
+					<span class="checkbox"> <input type="checkbox" id="use_agree" name="use_agree" value="1"> <em class="checkmark"></em> <label for="use_agree">마이너 갤러리 운영원칙에 동의합니다.</label>
+					<!--em삭제-->
+					</span>
+					<!-- 마이너 운영원칙-->
+					<div class="scroll operating">
+                <p>마이너 갤러리 서비스는 이용자분들이 직접 만들고 운영하는 커뮤니티 공간으로 모든 이용자들은 아래 운영원칙을 준수해야 합니다.</p>
+                <strong class="tit">[모든 이용자가 지켜야 하는 원칙]</strong> 
+                <ul> <!--200722 문구 수정-->
+                  <li>모든 이용자는 마이너 갤러리 주제에 맞는 정상적인 활동을 해주셔야 합니다.</li>
+                  <li>마이너 갤러리 서비스에 등록하는 모든 콘텐츠의 저작권은 게시한 이용자 본인에게 있으며, 이로 인해 발생되는 문제에 대해서도 해당 게시물을 게시한 이용자에게 책임이 있습니다.</li>
+                  <li>모든 이용자는 이용약관 및 운영원칙을 준수해야 하며, 이를 지키지 않아 발생하는 문제에 대해 일체의 책임을 져야 합니다.</li>
+                </ul>
+                <strong class="tit">[매니저가 지켜야 하는 원칙]</strong> 
+                <ul> <!--200722 문구 수정-->
+					<li>
+	                  '매니저'란 마이너 갤러리의 운영 권한을 갖는 이용자를 가리키는 단어입니다.<br>
+	                  매니저는 마이너 갤러리를 최초 개설하였거나, 이전 매니저로부터 마이너 갤러리를 위임받은 이용자로서 해당 마이너 갤러리를 대표하며, 마이너 갤러리를 관리할 수 있는 모든 권한과 책임을 갖고 있습니다. 
+	                </li>
+	                <li class="magtop">매니저는 이용약관, 운영원칙, 법령 등에 위배되는 게시물을 주도적으로 등록하거나 이용자들의 행동을 의도적으로 방치한 경우, 이에 대한 책임을 질 수 있습니다. 단, 매니저는 이용 제한 사유에 해당하지 않는 글(매니저에 대한 비판글 포함)의 삭제, 이용자 차단, 금지어 설정 등으로 이용자들의 정상적인 활동을 제한해서는 안 됩니다.</li>
+	                <li class="magtop">
+	                  매니저는 마이너 갤러리가 원활히 운영될 수 있도록 주기적으로 마이너 갤러리에 방문해 성실하고 공정한 관리를 다해야 합니다. 만약, 장기간(최소 10일 이상) 부재 시 다른 이용자에게 매니저의 책임과 권한이 이관될 수 있습니다. 
+	                  부매니저는 매니저가 임명하고 이를 수락한 이용자로 마이너 갤러리를 관리할 수 있는 일부 권한과 책임이 있습니다.
+	                </li>
+                </ul>
+                <strong class="tit">[이용제한 사유에 해당하는 금지 활동]</strong>
+                <dl>
+                  <dt>1. 음란물 유포</dt>
+                  <dd>외설적인 내용으로 성적 수치심과 혐오감을 유발하고 일반인의 성 관념에 위배되는 경우<br>남녀의 성기, 음모, 항문을 묘사하거나 성행위 등을 표현하는 경우<br>외설적인 내용으로 성적 수치심과 혐오감을 유발하고 일반인의 성 관념에 위배되는 경우<br>윤락행위를 알선하거나 성관계를 목적으로 하는 만남 알선 내용<br>스와핑, 동거 등 사회 윤리적으로 용납되지 않은 행위를 매개하는 경우</dd>
+                  <dt>2. 아동·청소년 대상 음란성 게시물 유포</dt>
+                  <dd>아동·청소년 성 착취물을 제작 및 배포하는 게시물<br>아동·청소년 성 착취물임을 알면서도 소지하거나 배포하는 게시물<br>아동·청소년의 성적 대상화 게시물<br>아동·청소년 대상 성범죄 및 성매매를 모의하거나 묘사, 조장하는 게시물<br>아동·청소년에게 음란물이나 성 착취물을 제공하는 게시물<br>아동·청소년에게 성인 도구를 판매하는 게시물<br>아동·청소년으로 인식될 수 있는 표현물에 대한 성 착취 게시물<br>그 외 아동·청소년 대상 성범죄 관련 게시물</dd>
+                  <dt>3. 불법적 내용 유포</dt>
+                  <dd>범죄 관련 내용을 미화/권유/조장하는 내용<br>범죄 행위를 청탁하거나 이를 권유, 유도 및 매개하는 내용<br>타인을 협박, 위협하는 게시물<br>여타의 범법 행위에 대한 동기 부여 및 실행에 도움이 되는 정보를 제공하는 내용<br>불법제품, 통신판매가 금지된 품목에 대한 판매, 알선 행위<br>해킹, 악성코드, 바이러스 유포하거나 타인의 권리를 침해할 수 있는 불법 자료를 유포하는 내용<br>다단계 영업, 자살 권유, 불법 도박, 사행심 조장 등의 내용<br>유해약물 등의 효능 및 제조방법 등을 구체적으로 기술하여 그 복용 제조 및 사용을 조장하거나 이를 매개하는 내용</dd>
+                  <dt>4. 도배, 스팸, 상업적 홍보 및 광고 활동</dt>
+                  <dd>동일한 내용을 반복적으로 등록하는 도배, 스팸 행위<br>상업적 목적으로 마이너 갤러리를 운영하거나 게시물을 등록하는 행위<br>홍보성 타 사이트 링크 포함 및 광고 게시물</dd>
+                  <dt>5. 명예훼손 행위</dt>
+                  <dd>타인에게 수치심, 혐오감, 불쾌감을 일으키는 게시물</dd>
+                  <dd>욕설 또는 언어폭력 등의 저속한 표현으로 특정인의 인격을 모독하거나 불쾌감을 불러 일으키는 내용</dd>
+                  <dt>6. 저작권 침해 행위</dt>
+                  <dd>권리자의 동의 없이 자료를 불법 게시, 배포, 복제하는 경우</dd>
+                  <dd>저작권이 있는 소프트웨어 불법 다운로드 및 시리얼 넘버, 시디키 등를 공유하는 경우</dd>
+                  <dd>여타 타인의 지적재산권을 침해하는 행위</dd>
+                  <dt>7. 불법적 거래 행위</dt>
+                  <dd>타인에게 금전적 거래로 마이너 갤러리를 양도, 대여하거나 그에 준하는 행위</dd>
+                  <dd>타인을 기망하여 마이너 갤러리를 위임받거나 탈취하는 행위</dd>
+                  <dt>8. 기타 금지 행위</dt>
+                  <dd>마이너 갤러리의 주제와 동떨어진 내용과 상식에 어긋나는 내용으로 지속적으로 분란을 야기하는 경우</dd>
+                  <dd>특정 단어, 문구를 반복적으로 등록하는 행위</dd>
+                  <dd>일반적인 사람이 보기에 혐오스럽고 눈살이 찌푸려지는 사진 또는 내용을 작성 (인간/동물의 사체 또는 훼손된 모습, 방뇨/배설/살인/자살의 장면 등)</dd>
+                  <dd>차별/갈등 조장 활동</dd>
+                  <dd>존속에 대한 상해 폭행 살인 등 전통적인 가족윤리를 훼손할 우려가 있는 내용</dd>
+                  <dd>정상적인 활동으로 볼 수 없는 반복적인 마이너 갤러리 만들기, 폐쇄, 위임 등의 행위</dd>
+                  <dd>디시인사이드 회사 직원 또는 마이너 갤러리 서비스 운영진을 사칭하는 행위</dd>
+                  <dd>타인의 사생활을 침해하는 게시물</dd>
+		          <dd>타인을 사칭하여 명예를 훼손하는 게시물, 타인의 사진 및 개인 정보(이름, 주민번호, 연락처 등)를 무단으로 배포하는 게시물</dd>
+		          <dd>※ 본 삭제 기준에 해당하는 게시물을 등록할 경우 관련 법령에 의해 민, 형사상 책임을 질 수 있습니다.</dd>
+                </dl>
+                <strong class="tit">[이용제한 내용]</strong>
+                <dl>
+                  <dt>1. 게시물 제한</dt>
+                  <dd>운영원칙에 어긋나는 게시물인 경우 타 이용자가 볼 수 없도록 노출이 제한됩니다.</dd>
+                  <dt>2. 이용자 이용 정지</dt>
+                  <dd>운영원칙에 어긋나는 행위를 한 이용자인 경우 게시물/댓글 등록 및 마이너 갤러리 개설 등의 활동을 할 수 없게 이용이 일시 또는 영구 정지됩니다.</dd>
+                  <dt>3. 매니저 해임</dt>
+                  <dd>매니저의 장기간 부재 또는 본 운영원칙에 위반되는 내용의 게시물의 방치 등 불성실한 운영 시 매니저를 해임할 수 있습니다.</dd>
+                  <dt>4. 마이너 갤러리 접근 제한</dt>
+                  <dd>운영원칙에 어긋나는 행위를 방치, 조장했거나 여타의 문제가 있는 경우 다른 이용자가 볼 수 없도록 마이너 갤러리 접근을 일시 또는 영구적으로 제한합니다.</dd>
+                  <dt>5. 마이너 갤러리 폐쇄</dt>
+                  <dd>중복된 주제의 개설, 개설 시와 무관한 주제로의 무단 변경, 운영원칙에 어긋나는 문제가 반복되거나 심대한 경우, 또는 수사기관의 요청, 불법적인 목적의 운영/개설 의도가 명확한 경우 해당 마이너 갤러리는 폐쇄 조치됩니다.</dd>
+                </dl>
+
+              </div>
+					<!-- //마이너 운영원칙-->
+				</div>
+
+				<div class="agree_chk chk3">
+					<span class="checkbox"> 
+					<input type="checkbox" id="upgrade_agree" name="upgrade_agree" value="1"> <em class="checkmark"></em> <label for="upgrade_agree">메인 갤러리 승격에 동의합니다.</label>
+					</span>
+					<p class="txt">신청하신 마이너 갤러리는 디시인사이드의 판단에 따라 메인 갤러리로 승격되고, 매니저 권한이 회수됩니다.</p>
+				</div>
+			</div>
+			<div class="make_guidetxt_box">
+				<p class="tiptxt">
+					<em class="tip_deco_dot"></em>게시물의 관리 의무와 권리는 매니저(개설자)에게 있으며, 운영원칙을 위반한 경우 폐쇄 또는 매니저 해임이 될 수 있습니다.(음란물, 불량 게시물, 상업적 게시물, 댓글의 방치 등)
+				</p>
+			</div>
+			<div class="make_bottom_btnbox">
+				<button type="button" class="list_bottom btn_grey" onclick="history.back()">취소</button>
+				<button type="button" class="list_bottom btn_blue" onclick="$('#frmCreate').submit()">만들기</button>
+			</div>
+		</section>
+	</div>
+</main>
+
+<!--231127 승격 안내 레이어-->
+
+<!--231127 승격 안내 레이어-->
+
+<script type="text/javascript">
+var csrf_token =		get_cookie('ci_c');
+var wait_create_YN =	'Y';
+var user_sex =			'X';
+var user_adult =		'0';
+var ipinEncData =		'AgEEQTYzOFyxL0ooZiFZagIjSGzIl9lO3+HbnwyKVOWhSZgEOQJfDBolPk77eAlV2OPPmPQWXzOSENgZUTO8VWi2c3Zs/iOmmmvZ8Tl5qh62KOJ6qw4XJTrQOT5biQtfJYjomJg8BmVKe92e5EPF48JGMl0Mz+g5p/Bp4zzGhLrWJ7fKw/LEnStvy+If+P4KaPxK/SO3mwpq9lVorFMuqY96P5zBQefXdXDfwmXqJ7KRmdPnBHD30iKCq1Nt5yhL0qugpZyyVq/s01Z6Cb11WkgLa68VQlo=';
+
+$('.chk_str_length').keyup(function () {
+	var inputVal =		$(this).val();
+	var nInputVal =		inputVal.length;
+	var maxcount =		$('.max_txt b', $(this).closest('.cont_box')).text();
+	
+	if (nInputVal > maxcount) {
+		inputVal = inputVal.substr(0, maxcount);
+		nInputVal = maxcount;
+		$(this).val(inputVal);
+	}
+	
+	$('.max_txt span', $(this).closest('.cont_box')).text(nInputVal);
+}).click(function(){ $(this).keyup(); }).blur(function(){ $(this).keyup(); });;
+
+$('div.select_box li').click(function() {
+	authCategoryChk($('input[name="mg_category"]'));
+});
+</script>
+    <!-- 하단 -->
+    <footer class="dcfoot">
+    
+		
+     <div class="info_policy">
+       <a href="https://www.dcinside.com/company">회사소개</a>
+       <a href="https://www.dcinside.com/company#alliance">제휴안내</a>
+       <a href="https://nstatic.dcinside.com/dc/dcad/w/index.html">광고안내</a>
+       <a href="https://nstatic.dcinside.com/dc/w/policy/policy_index.html">이용약관</a>
+       <a href="https://nstatic.dcinside.com/dc/w/policy/privacy_index.html"><b>개인정보처리방침</b></a>
+       <a href="https://nstatic.dcinside.com/dc/w/policy/youth_policy.html">청소년보호정책</a>
+       
+              <a href="javascript:;" onclick="open_minor_guide()">마이너 갤러리 운영원칙</a>
+                                   
+     </div>
+     <div class="copyright">Copyright ⓒ 1999 - 2026 dcinside. All rights reserved.</div>
+    </footer>
+    <!-- //하단 -->
+      </div>
+	  
+  <!-- 한줄 알림 -->  
+	<div class="alarmPopup pop_wrap alarm" style="right:30px;bottom:30px;display:none">
+  <script id="alarm-popup-tmpl" type="text/x-jquery-tmpl">
+	  <div class="pop_content one_noticewrap">
+		<a href="${link}" class="one_notice_txt" onclick="alarmReadOk(${idx})">
+		  <span class="new"><em class="blind">NEW</em><em class="sp_img icon_new"></em></span>${prefix}{{if type == 'manager' && (g_type == 'MI' || g_type == 'PR')}}]{{/if}} ${content}
+		</a>
+		<button type="button" class="poply_close removeAlarm" data-no="${idx}"><span class="blind">알림 레이어 닫기</span><em class="sp_img icon_blueclose"></em></button>
+	  </div>
+    </script>
+	</div>
+  <!-- //한줄 알림 -->
+  
+   		
+      <!-- Taboola -->
+  <script type="text/javascript">
+  // window._taboola = window._taboola || [];
+  // _taboola.push({flush: true});
+  </script>
+  <!-- Taboola -->
+      
+<!-- 기본 애널리틱스 -->
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-5149721-11']);
+	  _gaq.push(['_setDomainName', 'dcinside.com']);
+	  _gaq.push(['_setAllowLinker', true]);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+	</script>
+<!-- //기본 애널리틱스 -->
+
+<!-- 추가 애널리틱스 -->
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-5149721-39']);
+	  _gaq.push(['_setDomainName', 'dcinside.com']);
+	  _gaq.push(['_setAllowLinker', true]);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+	</script>
+<!--
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-5149721-64']);
+	  _gaq.push(['_setDomainName', 'dcinside.com']);
+	  _gaq.push(['_setAllowLinker', true]);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+	</script>
+
+-->
+<!-- 추가 애널리틱스 -->
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  //마이너 갤러리 전체
+  ga('create', 'UA-10723182-7', 'auto', {'name': 'mgall_all','sampleRate': 2});
+  ga('mgall_all.require', 'displayfeatures');
+  ga('mgall_all.send', 'pageview');
+
+  //마이너 갤러리 웹
+  ga('create', 'UA-10723182-8', 'auto', {'name': 'mgall_web'});
+  ga('mgall_web.require', 'displayfeatures');
+  ga('mgall_web.send', 'pageview');
+
+    //마이너 갤러리 전체 + 승격갤
+  ga('create', 'UA-10723182-10', 'auto', {'name': 'mgall_raise','sampleRate': 2});
+  ga('mgall_raise.require', 'displayfeatures');
+  ga('mgall_raise.send', 'pageview');
+
+</script>
+
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-8LH47K4LPZ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-8LH47K4LPZ');
+    gtag('config', 'G-NJF9PXZD5K');
+    gtag('config', 'G-HNDXQK2FQ7');
+    gtag('config', 'G-NWM777QSMB');
+    gtag('config', 'G-03JSGF9S2P');
+    </script>
+  <script type="text/javascript" src="//wcs.naver.net/wcslog.js"></script>
+<script type="text/javascript">
+if(!wcs_add) var wcs_add = {};
+wcs_add["wa"] = "198212c4b0ee430";
+try { wcs_do();} catch(err) {}
+</script>  
+
+<div style="display: none; height: 16px; width: 16px; position: fixed; z-index: 100000000; cursor: pointer; padding: 0px; margin: 0px; opacity: 0.5;"></div><div style="position:fixed; top:0; left:0; overflow:hidden;"><input style="position:absolute; left:-300px;" type="text" value="" id="focus_retriever" readonly="true"></div></body>
