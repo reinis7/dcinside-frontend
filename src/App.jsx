@@ -1,23 +1,19 @@
-import { DcHeader } from './layout/DcHeader.jsx'
-import { HomeContent } from './layout/HomeContent.jsx'
-import { HomeSidebar } from './layout/HomeSidebar.jsx'
-import { DcFooter } from './layout/DcFooter.jsx'
-import './App.css'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { WwwRoutes } from './routes/wwwRoutes'
+import { SignRoutes } from './routes/signRoutes'
+import { GallRoutes } from './routes/gallRoutes'
 
 function App() {
   return (
-    <div id="top" className="min-h-screen bg-[#eaeaea] text-left text-neutral-900">
-      <DcHeader />
-
-      <main id="container" className="mx-auto max-w-[1100px] px-3 py-4">
-        <div className="main_content flex flex-col gap-4 gap-x-4 lg:flex-row lg:items-start">
-          <HomeContent />
-          <HomeSidebar />
-        </div>
-      </main>
-
-      <DcFooter />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/www" replace />} />
+        <Route path="/www/*" element={<WwwRoutes />} />
+        <Route path="/gall/*" element={<GallRoutes />} />
+        <Route path="/sign/*" element={<SignRoutes />} />
+        <Route path="*" element={<Navigate to="/www" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
