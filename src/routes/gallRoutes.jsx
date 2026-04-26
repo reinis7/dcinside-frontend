@@ -4,6 +4,7 @@ import { GallMinorIndexPage } from '../pages/gall/GallMinorIndexPage'
 import { GallMiniIndexPage } from '../pages/gall/GallMiniIndexPage'
 import { GallPersonIndexPage } from '../pages/gall/GallPersonIndexPage'
 import { GallCreateStubPage } from '../pages/gall/GallCreateStubPage'
+import { GallBoardViewPage } from '../pages/gall/GallBoardViewPage'
 import { RequireAuth } from '../auth/RequireAuth'
 
 function GallLayout({ children }) {
@@ -58,6 +59,7 @@ export function GallRoutes() {
         <Route path="n/create" element={<RequireAuth cancelTo="/gall/n"><GallCreateStubPage /></RequireAuth>} />
         <Route path="p" element={<GallPersonIndexPage />} />
         <Route path="p/create" element={<RequireAuth cancelTo="/gall/p"><GallCreateStubPage /></RequireAuth>} />
+        <Route path="board/view" element={<GallBoardViewPage />} />
         <Route path="*" element={<Navigate to="/gall" replace />} />
       </Routes>
     </GallLayout>

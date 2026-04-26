@@ -12,9 +12,11 @@ const REALTIME_BEST_QUERY = gql`
     posts(first: 100, where: { orderby: { field: DATE, order: DESC } }) {
       nodes {
         id
+        databaseId
         date
         title
         content
+        databaseId
         categories {
           edges {
             node {
@@ -51,6 +53,7 @@ function toRealtimeBestItems(nodes) {
     const plainContent = stripHtml(node.content)
     const fallbackTitle = plainContent || '제목 없음'
     const categoryName = node.categories?.edges?.[0]?.node?.name
+    const databaseId = node.databaseId
 
     return {
       id: node.id,
@@ -59,7 +62,7 @@ function toRealtimeBestItems(nodes) {
       gallery: categoryName ?? '게시판',
       time: formatUpdatedAt(node.date),
       commentCount: 0,
-      href: '#',
+      href: databaseId ? `/gall/board/view/?id=dcbest&no=${databaseId}` : '#',
       thumb: '/snapshot/nstatic.dcinside.com/dc/w/images/img_none1.jpg',
     }
   })
