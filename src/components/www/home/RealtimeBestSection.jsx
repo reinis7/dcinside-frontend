@@ -4,7 +4,7 @@ import { ThumbStrip } from './ui/ThumbStrip'
 
 export function RealtimeBestSection({ items, loading = false, errorMessage = null }) {
   const [page, setPage] = useState(1)
-  const pageSize = 20
+  const pageSize = 30
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
   const pageItems = useMemo(() => {
     const start = (page - 1) * pageSize
@@ -38,7 +38,7 @@ export function RealtimeBestSection({ items, loading = false, errorMessage = nul
         {pageItems.map((it) => (
           <li
             key={it.id}
-            className="grid grid-cols-[46px_1fr_62px] items-center gap-2 border-b border-[#ededed] px-3 py-1.5 last:border-b-0"
+            className="grid grid-cols-[46px_1fr_152px] items-center gap-2 border-b border-[#ededed] px-3 py-1.5 last:border-b-0"
           >
             <img
               src={it.thumb}
@@ -49,7 +49,11 @@ export function RealtimeBestSection({ items, loading = false, errorMessage = nul
               {it.title}{' '}
               {it.commentCount > 0 ? <span className="font-bold text-[#d31900]">[{it.commentCount}]</span> : null}
             </a>
-            <div className="text-right text-[11px] text-[#999]">{it.time}</div>
+            <div className="truncate text-right text-[11px]">
+              <span className="text-[#555]">{it.categoryName ?? it.gallery ?? '게시판'}</span>
+              <span className="mx-1 text-[#aaa]">|</span>
+              <span className="text-[#999]">{it.time}</span>
+            </div>
           </li>
         ))}
         {!loading && pageItems.length === 0 ? (

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
+import dayjs from 'dayjs'
 import { buildWwwHomeMock } from '../../mocks/wwwHomeMock'
 import { RealtimeBestSection } from '../../components/www/home/RealtimeBestSection'
 import { ConceptSection } from '../../components/www/home/ConceptSection'
@@ -36,15 +37,12 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-function formatTime(isoDate) {
-  if (!isoDate) return '00:00'
-  const d = new Date(isoDate)
-  if (Number.isNaN(d.getTime())) return '00:00'
-  return d.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+function formatUpdatedAt(isoDate) {
+  if (!isoDate) return '--:--'
+  const d = dayjs(isoDate)
+  if (!d.isValid()) return '--:--'
+  if (d.isSame(dayjs(), 'day')) return d.format('HH:mm')
+  return d.format('MM.DD')
 }
 
 function toRealtimeBestItems(nodes) {
@@ -57,8 +55,9 @@ function toRealtimeBestItems(nodes) {
     return {
       id: node.id,
       title: plainTitle || fallbackTitle,
+      categoryName: categoryName ?? '게시판',
       gallery: categoryName ?? '게시판',
-      time: formatTime(node.date),
+      time: formatUpdatedAt(node.date),
       commentCount: 0,
       href: '#',
       thumb: '/snapshot/nstatic.dcinside.com/dc/w/images/img_none1.jpg',
