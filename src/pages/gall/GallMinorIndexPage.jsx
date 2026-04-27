@@ -1,3 +1,6 @@
+import { gql } from '@apollo/client/core'
+import { useQuery } from '@apollo/client/react'
+import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 
@@ -25,15 +28,90 @@ const NEW_MINOR = [
 
 const TICKER_ITEMS = ['충격 마이너 갤러리', 'KFC', '2026 탑스 올...', '복학요사 시즌2', '모털택시 시즌 3', '이경일 둘 이 블...']
 
-const GALLERY_COLUMNS = [
-  ['여자아이돌 음악', 'QWER(밴드)', '한국 여자아이돌', 'NMIXX(엔믹스)', '위버스', '프로미스나인', '솔가열', '픽 엔 믹스', '케이팝(K-POP)', '안씨의 유튜브', '아일릿', '에스파 걸 그룹', '아카라이브 채널', '일본 여자 아이돌'],
-  ['노지선', '큰코 서부키', '이새울', '김채원', '여자아이돌 위버스', '프로미스나인 리얼리티', '워넌', '르세라핌(tripleS)', 'STAYC(스테이씨)', '방지민(프로미스나인)', '최예나', '이채영(프로미스나인)', '로쏘빌란', '변우석'],
-  ['프로젝트걸그룹', '미야야키 사쿠라', '레드벨벳의 팬 얼', '이찬원', '골때리는 그녀들 시티...', '이서연', '더걸그룹', '아다마다지', '시타요 미유', '박지현(가수)', '더구지 나츠키', 'killkilli(키키)', 'HYNN(박혜원)', '지우'],
-  ['뉴진스', '혜원', '릴리 M', '장원영', '피프티피프티 유튜브', '장규리', '주안 사', '러블리즈 리얼리티', '임용웅', '아워윙 운아', '프로미스나인 뽀카', '이채연', '조추리', '레이틴시'],
-  ['설윤', '김민주', '이달의 소녀', '구호전', '류준열 브이라이브', '설현', '나강나고 있어연프롤...', '쏘이정', '진혜성', '지수', '세이미너입', '홍은채', '오쾌원(CLASSY)', '이시연'],
-  ['이준호', '김동현', '신혜선', '도경수', '기타 걸그룹', '송가인 유튜브', '방탄소년단 지민', '엔믹스 브이라이브', '조유리(재월)짯째나', '꼬꼬미', '카즈하(르세라핌)', '강하린', 'K (아이랜드)', 'XdnaryHeroes'],
-  ['최립우', '이와타타 사토', '리즈(아이브)', '이승우 유튜브', '안유진', '권은비', '김홍빈', 'AKMU 브이라이브', '분 이노우에', 'NEW', '플레이어(flareU)', '분 이노우에', '악 아이브 아이브 유튜...', '강라온(모델)'],
+const GALLERY_PARENT_TOPICS = [
+  '연예',
+  '게임',
+  '취미',
+  '만화/애니',
+  '해외방송',
+  '음식',
+  '국내방송',
+  '음악',
+  '스포츠',
+  '스포츠스타',
+  '생활',
+  '학술',
+  '대학',
+  '직업',
+  '금융/재테크',
+  '성공/계발',
+  '디지털/IT',
+  '교통/운송',
+  '건강/심리',
+  '교육',
+  '수능',
 ]
+
+const TOPIC_LAYOUT_ROWS = [
+  [{ topicName: '연예', widthWeight: 1, columnCount: 7 }],
+  [{ topicName: '게임', widthWeight: 1, columnCount: 7 }],
+  [{ topicName: '취미', widthWeight: 1, columnCount: 7 }],
+  [
+    { topicName: '만화/애니', widthWeight: 1, columnCount: 3 },
+    { topicName: '해외방송', widthWeight: 1, columnCount: 2 },
+    { topicName: '음식', widthWeight: 1, columnCount: 2 },
+  ],
+  [
+    { topicName: '국내방송', widthWeight: 1, columnCount: 4 },
+    { topicName: '음악', widthWeight: 1, columnCount: 4 },
+  ],
+  [
+    { topicName: '스포츠', widthWeight: 1, columnCount: 4 },
+    { topicName: '스포츠스타', widthWeight: 1, columnCount: 4 },
+  ],
+  [
+    { topicName: '생활', widthWeight: 2, columnCount: 4 },
+    { topicName: '학술', widthWeight: 2, columnCount: 4 },
+    { topicName: '대학', widthWeight: 1, columnCount: 2 },
+    { topicName: '직업', widthWeight: 1, columnCount: 2 },
+  ],
+  [
+    { topicName: '금융/재테크', widthWeight: 1, columnCount: 1 },
+    { topicName: '성공/계발', widthWeight: 1, columnCount: 1 },
+    { topicName: '디지털/IT', widthWeight: 1, columnCount: 1 },
+    { topicName: '교통/운송', widthWeight: 1, columnCount: 1 },
+    { topicName: '건강/심리', widthWeight: 1, columnCount: 1 },
+    { topicName: '교육', widthWeight: 1, columnCount: 1 },
+    { topicName: '수능', widthWeight: 1, columnCount: 1 },
+  ],
+]
+
+const GALLERY_TOPIC_TREE_QUERY = gql`
+  query NewQuery($parentTopics: [String!], $limit: Int) {
+    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit) {
+      name
+      topicId
+      slug
+      galleryCount
+      child {
+        galleries {
+          databaseId
+          slug
+          title
+          status
+        }
+      }
+    }
+  }
+`
+
+function toColumns(items, colCount = 7) {
+  const columns = Array.from({ length: colCount }, () => [])
+  items.forEach((item, idx) => {
+    columns[idx % colCount].push(item)
+  })
+  return columns
+}
 
 function MinorCreateButton({ onClick, isBusy = false }) {
   return (
@@ -53,6 +131,14 @@ function MinorCreateButton({ onClick, isBusy = false }) {
 export function GallMinorIndexPage() {
   const navigate = useNavigate()
   const { isAuthed, isLoading, viewer, logout } = useAuth()
+  const { data: topicTreeData, loading: isTopicTreeLoading } = useQuery(GALLERY_TOPIC_TREE_QUERY, {
+    variables: {
+      parentTopics: GALLERY_PARENT_TOPICS,
+      limit: 50,
+    },
+    fetchPolicy: 'network-only',
+  })
+  const topicTree = topicTreeData?.dcinsideGalleryTopicTree ?? []
 
   const handleCreate = () => {
     if (isLoading) return
@@ -66,6 +152,26 @@ export function GallMinorIndexPage() {
   }
 
   const displayName = viewer?.username || viewer?.name || '회원'
+  const topicSectionMap = useMemo(() => {
+    const topicMap = new Map(topicTree.map((topic) => [topic?.name, topic]))
+    return new Map(
+      GALLERY_PARENT_TOPICS.map((topicName) => {
+      const topic = topicMap.get(topicName)
+      const galleries = (topic?.child ?? []).flatMap((child) => {
+        const rows = child?.galleries ?? []
+        return rows
+          .filter((gallery) => gallery?.title)
+          .map((gallery) => ({
+            key: `${gallery.databaseId ?? gallery.slug ?? gallery.title}`,
+            label: gallery.title,
+            slug: gallery.slug,
+            href: `/gall/mgallery/board/lists/?id=${encodeURIComponent(String(gallery.slug ?? gallery.databaseId ?? ''))}`,
+          }))
+      })
+        return [topicName, { topicName, count: topic?.galleryCount ?? galleries.length, galleries }]
+      }),
+    )
+  }, [topicTree])
 
   return (
     <section className="grid gap-2 text-[12px]">
@@ -233,28 +339,44 @@ export function GallMinorIndexPage() {
       </div>
 
       <div className="border border-[#3b4890] bg-white">
-        <div className="flex items-center justify-between border-b border-[#d9d9d9] px-3 py-2">
-          <div className="text-[13px]">
-            <span className="font-bold text-[#3b4890]">연예</span>
-            <span className="ml-1 text-[#888]">(8504)</span>
+        {TOPIC_LAYOUT_ROWS.map((row, rowIdx) => (
+          <div
+            key={`topic-row-${rowIdx}`}
+            className={rowIdx === 0 ? 'grid' : 'grid border-t border-[#3b4890]'}
+            style={{ gridTemplateColumns: row.map((panel) => `${panel.widthWeight}fr`).join(' ') }}
+          >
+            {row.map((panel, panelIdx) => {
+              const section = topicSectionMap.get(panel.topicName) ?? { topicName: panel.topicName, count: 0, galleries: [] }
+              const columns = toColumns(section.galleries, panel.columnCount)
+              return (
+                <div key={panel.topicName} className={panelIdx === 0 ? '' : 'border-l border-[#3b4890]'}>
+                  <div className="flex items-center justify-between border-b border-[#d9d9d9] px-3 py-2">
+                    <div className="text-[13px]">
+                      <span className="font-bold text-[#3b4890]">{section.topicName}</span>
+                      <span className="ml-1 text-[#888]">({isTopicTreeLoading ? '--' : section.count})</span>
+                    </div>
+                    <button type="button" className="h-4 w-4 border border-[#cfcfcf] bg-[#f6f6f6]" aria-label="정렬">
+                      ▼
+                    </button>
+                  </div>
+                  <div className="grid" style={{ gridTemplateColumns: `repeat(${panel.columnCount}, minmax(0, 1fr))` }}>
+                    {columns.map((column, colIdx) => (
+                      <ul key={colIdx} className="min-h-[360px] border-r border-[#ececec] px-3 py-2 last:border-r-0">
+                        {column.map((gallery, rowIdx2) => (
+                          <li key={`${gallery.key}_${rowIdx2}`} className="truncate py-[1px] text-[12px] leading-[1.45] text-[#444]">
+                            <a href={gallery.href} className="hover:underline">
+                              {gallery.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
-          <button type="button" className="h-4 w-4 border border-[#cfcfcf] bg-[#f6f6f6]" aria-label="정렬">
-            ▼
-          </button>
-        </div>
-        <div className="grid grid-cols-7">
-          {GALLERY_COLUMNS.map((column, colIdx) => (
-            <ul key={colIdx} className="min-h-[360px] border-r border-[#ececec] px-3 py-2 last:border-r-0">
-              {column.map((name) => (
-                <li key={name} className="truncate py-[1px] text-[12px] leading-[1.45] text-[#444]">
-                  <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
-                    {name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ))}
-        </div>
+        ))}
       </div>
     </section>
   )
