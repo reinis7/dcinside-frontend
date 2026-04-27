@@ -123,12 +123,13 @@ export function GallMinorBoardListPage() {
   const [searchParams] = useSearchParams()
   const { isAuthed, viewer, logout } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
+  const [pageSize, setPageSize] = useState(50)
   const [galleryMeta, setGalleryMeta] = useState({
     title: `${galleryId} 갤러리`,
     description: '',
   })
   const { data, loading, error } = useQuery(MINOR_BOARD_LIST_QUERY, {
-    variables: { first: 30 },
+    variables: { first: pageSize },
     fetchPolicy: 'network-only',
   })
   const { data: galleryDetailData, loading: isGalleryDetailLoading } = useQuery(GALLERY_DETAIL_QUERY, {
@@ -197,6 +198,7 @@ export function GallMinorBoardListPage() {
   const galleryPostName = galleryDetail?.postName || '일반'
   const displayName = viewer?.username || viewer?.name || '회원'
   const loginHref = `/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`
+  const writeHref = `/gall/mgallery/board/write/?id=${encodeURIComponent(galleryId)}`
 
   return (
     <section className="grid grid-cols-[1fr_300px] gap-3">
@@ -237,12 +239,18 @@ export function GallMinorBoardListPage() {
             <span className="ml-3 text-[#333]">{galleryPostName}</span>
           </div>
           <div className="flex items-center gap-1">
-            <select className="h-[22px] border border-[#cfcfcf] bg-white px-1 text-[12px] text-[#444]">
-              <option>50개</option>
+            <select
+              value={String(pageSize)}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="h-[22px] border border-[#cfcfcf] bg-white px-1 text-[12px] text-[#444]"
+            >
+              <option value="20">20개</option>
+              <option value="50">50개</option>
+              <option value="100">100개</option>
             </select>
-            <button type="button" className="h-[22px] rounded-sm border border-[#9da9c6] bg-white px-2 text-[12px] font-bold text-[#2f3d8f]">
+            <Link to={writeHref} className="inline-flex h-[22px] items-center rounded-sm border border-[#9da9c6] bg-white px-2 text-[12px] font-bold text-[#2f3d8f]">
               ✎ 글쓰기
-            </button>
+            </Link>
           </div>
         </div>
 
