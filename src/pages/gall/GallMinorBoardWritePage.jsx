@@ -1,7 +1,10 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import JoditEditor from 'jodit-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import 'jodit/es2021/jodit.min.css'
+import { useAuth } from '../../auth/authContext'
 
 const GALLERY_DETAIL_QUERY = gql`
   query GalleryWriteDetail($galleryId: String!) {
@@ -21,6 +24,7 @@ function stripHtml(html) {
 export function GallMinorBoardWritePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { viewer } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
   const { data } = useQuery(GALLERY_DETAIL_QUERY, {
     variables: { galleryId },
@@ -30,8 +34,31 @@ export function GallMinorBoardWritePage() {
   const galleryTitle = gallery?.title ? stripHtml(gallery.title) : `${galleryId} 갤러리`
   const [title, setTitle] = useState('')
   const [nickname, setNickname] = useState('')
+  const [htmlContent, setHtmlContent] = useState('')
 
   const listHref = useMemo(() => `/gall/mgallery/board/lists/?id=${encodeURIComponent(galleryId)}`, [galleryId])
+  const displayName = viewer?.username || viewer?.name || ''
+  const editorConfig = useMemo(
+    () => ({
+      readonly: false,
+      autofocus: false,
+      statusbar: false,
+      toolbarAdaptive: false,
+      toolbarButtonSize: 'small',
+      showCharsCounter: false,
+      showWordsCounter: false,
+      showXPathInStatusbar: false,
+      minHeight: 430,
+      maxHeight: 430,
+      placeholder: '내용을 입력해 주세요.',
+    }),
+    [],
+  )
+
+  useEffect(() => {
+    if (!displayName) return
+    setNickname(displayName)
+  }, [displayName])
 
   return (
     <section className="border border-[#cfcfcf] bg-white">
@@ -60,6 +87,7 @@ export function GallMinorBoardWritePage() {
               onChange={(e) => setNickname(e.target.value)}
               className="h-[34px] border border-[#cfcfcf] bg-white px-2 text-[14px]"
               placeholder="닉네임"
+              readOnly={Boolean(displayName)}
             />
             <input className="h-[34px] border border-[#cfcfcf] bg-white px-2 text-[14px]" placeholder="비밀번호" />
             <div className="flex items-center gap-3 text-[15px] text-[#444]">
@@ -107,7 +135,9 @@ export function GallMinorBoardWritePage() {
                 맑은 고딕 · 12 · 가 · 표 · 목록 · 링크
               </div>
 
-              <div className="h-[430px] bg-white" />
+              <div className="bg-white">
+                <JoditEditor value={htmlContent} config={editorConfig} onChange={setHtmlContent} />
+              </div>
 
               <div className="flex items-center border-t border-[#e5e5e5] bg-[#fafafa] p-2">
                 <input
