@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 
 const HOT_MINOR = [
@@ -35,12 +35,15 @@ const GALLERY_COLUMNS = [
   ['최립우', '이와타타 사토', '리즈(아이브)', '이승우 유튜브', '안유진', '권은비', '김홍빈', 'AKMU 브이라이브', '분 이노우에', 'NEW', '플레이어(flareU)', '분 이노우에', '악 아이브 아이브 유튜...', '강라온(모델)'],
 ]
 
-function MinorCreateButton({ onClick }) {
+function MinorCreateButton({ onClick, isBusy = false }) {
   return (
     <button
       type="button"
-      className="inline-flex h-[30px] items-center justify-center rounded-full border border-[#ef9f00] bg-[#f3b100] px-4 text-[15px] font-bold leading-none text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.12)]"
+      className={`inline-flex h-[30px] items-center justify-center rounded-full border border-[#ef9f00] bg-[#f3b100] px-4 text-[15px] font-bold leading-none text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.12)] ${
+        isBusy ? 'cursor-wait opacity-80' : 'cursor-pointer'
+      }`}
       onClick={onClick}
+      disabled={isBusy}
     >
       마이너 갤러리 만들기
     </button>
@@ -49,9 +52,10 @@ function MinorCreateButton({ onClick }) {
 
 export function GallMinorIndexPage() {
   const navigate = useNavigate()
-  const { isAuthed } = useAuth()
+  const { isAuthed, isLoading, viewer, logout } = useAuth()
 
   const handleCreate = () => {
+    if (isLoading) return
     if (!isAuthed) {
       const ok = confirm('로그인 후 이용할 수 있습니다.\n로그인 페이지로 이동할까요?')
       if (!ok) return
@@ -61,6 +65,8 @@ export function GallMinorIndexPage() {
     navigate('/gall/m/create')
   }
 
+  const displayName = viewer?.username || viewer?.name || '회원'
+
   return (
     <section className="grid gap-2 text-[12px]">
       <div className="grid grid-cols-[1fr_300px] gap-2">
@@ -69,21 +75,65 @@ export function GallMinorIndexPage() {
             <div className="text-[17px] font-semibold tracking-[-0.02em] text-[#222]">
               누구나 개설할 수 있는 <span className="text-[#3b4890]">마이너 갤러리</span>를 만들어보세요.
             </div>
-            <MinorCreateButton onClick={handleCreate} />
+            <MinorCreateButton onClick={handleCreate} isBusy={isLoading} />
           </div>
         </div>
 
         <aside className="border border-[#3b4890] bg-white">
-          <div className="border-b border-[#dedede] px-3 py-2 text-[17px] font-bold tracking-[-0.02em] text-[#3b4890]">
-            로그인해 주세요.
-          </div>
-          <div className="flex items-center justify-center gap-3 py-2 text-[12px] font-semibold text-[#222]">
-            <span>갤찾기</span>
-            <span className="text-[#bbb]">|</span>
-            <span>스크랩</span>
-            <span className="text-[#bbb]">|</span>
-            <span>알림</span>
-          </div>
+          {isAuthed ? (
+            <>
+              <div className="flex items-center justify-between border-b border-[#dedede] px-3 py-1">
+                <div className="flex min-w-0 items-center gap-1 text-[18px] font-bold tracking-[-0.01em] text-[#1f3b8f]">
+                  <span className="truncate">{displayName}님</span>
+                  <span className="text-[15px] text-[#233f95]">›</span>
+                </div>
+                <button
+                  type="button"
+                  className="h-[30px] rounded-[4px] border border-[#243f93] bg-[#2f4aa0] px-3 text-[13px] font-bold text-white"
+                  onClick={logout}
+                >
+                  로그아웃
+                </button>
+              </div>
+              <div className="flex items-center justify-center gap-2 py-1.5 text-[12px] font-semibold text-[#222]">
+                <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+                  갤로그
+                </a>
+                <span className="text-[#bbb]">|</span>
+                <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+                  즐겨찾기
+                </a>
+                <span className="text-[#bbb]">|</span>
+                <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+                  운영
+                </a>
+                <span className="text-[#bbb]">|</span>
+                <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+                  스크랩
+                </a>
+                <span className="text-[#bbb]">|</span>
+                <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+                  알림
+                </a>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/sign/login?s_url=%2Fgall%2Fm"
+                className="block border-b border-[#dedede] px-3 py-2 text-[14px] font-bold tracking-[-0.02em] text-[#3b4890] hover:underline"
+              >
+                로그인해 주세요.
+              </Link>
+              <div className="flex items-center justify-center gap-3 py-2 text-[12px] font-semibold text-[#222]">
+                <span>갤찾기</span>
+                <span className="text-[#bbb]">|</span>
+                <span>스크랩</span>
+                <span className="text-[#bbb]">|</span>
+                <span>알림</span>
+              </div>
+            </>
+          )}
         </aside>
       </div>
 
@@ -164,7 +214,7 @@ export function GallMinorIndexPage() {
           </div>
         </div>
 
-        <div />
+        <div className={isAuthed ? 'border border-[#e3e6ef] bg-gradient-to-br from-[#f4f6f9] via-[#fdfefe] to-white' : ''} />
       </div>
 
       <div className="flex items-center justify-between">
