@@ -71,7 +71,7 @@ export function GallMiniIndexPage() {
         items: galleries.slice(0, 9).map((g) => ({
           key: String(g.slug ?? g.databaseId ?? g.title),
           title: stripHtml(g.title),
-          href: `/gall/ngallery/board/lists/?id=${encodeURIComponent(String(g.slug ?? g.databaseId ?? ''))}`,
+          href: `/gall/mini/board/lists/?id=${encodeURIComponent(String(g.slug ?? g.databaseId ?? ''))}`,
         })),
       }
     })

@@ -54,8 +54,8 @@ export function GallBoardViewPage() {
   const title = stripHtml(post?.title) || '제목 없음'
   const listHref = loc.pathname.includes('/gall/mgallery/board/view')
     ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(boardId)}`
-    : loc.pathname.includes('/gall/ngallery/board/view')
-      ? `/gall/ngallery/board/lists/?id=${encodeURIComponent(boardId)}`
+    : loc.pathname.includes('/gall/mini/board/view')
+      ? `/gall/mini/board/lists/?id=${encodeURIComponent(boardId)}`
       : '/www'
 
   return (

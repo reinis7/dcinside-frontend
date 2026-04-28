@@ -219,7 +219,7 @@ export function GallMinorBoardListPage() {
   const [searchParams] = useSearchParams()
   const { isAuthed, viewer, logout } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
-  const boardBase = loc.pathname.includes('/gall/ngallery/') ? 'ngallery' : 'mgallery'
+  const boardBase = loc.pathname.includes('/gall/mini/') ? 'mini' : 'mgallery'
   const [pageSize, setPageSize] = useState(50)
   const [galleryMeta, setGalleryMeta] = useState({
     title: `${galleryId} 갤러리`,

@@ -126,7 +126,7 @@ export function GallMinorBoardWritePage() {
   const [searchParams] = useSearchParams()
   const { viewer, isAuthed } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
-  const boardBase = loc.pathname.includes('/gall/ngallery/') ? 'ngallery' : 'mgallery'
+  const boardBase = loc.pathname.includes('/gall/mini/') ? 'mini' : 'mgallery'
   const { data } = useQuery(GALLERY_DETAIL_QUERY, {
     variables: { galleryId },
     fetchPolicy: 'network-only',

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { GallHomePage } from '../pages/gall/GallHomePage'
 import { GallMinorIndexPage } from '../pages/gall/GallMinorIndexPage'
 import { GallMiniIndexPage } from '../pages/gall/GallMiniIndexPage'
@@ -20,6 +20,21 @@ function GallLayout({ children }) {
   )
 }
 
+function RedirectNgalleryToMiniLists() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/mini/board/lists${loc.search}`} replace />
+}
+
+function RedirectNgalleryToMiniWrite() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/mini/board/write${loc.search}`} replace />
+}
+
+function RedirectNgalleryToMiniView() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/mini/board/view${loc.search}`} replace />
+}
+
 export function GallRoutes() {
   return (
     <GallLayout>
@@ -35,9 +50,12 @@ export function GallRoutes() {
         <Route path="mgallery/board/lists" element={<GallMinorBoardListPage />} />
         <Route path="mgallery/board/write" element={<GallMinorBoardWritePage />} />
         <Route path="mgallery/board/view" element={<GallBoardViewPage />} />
-        <Route path="ngallery/board/lists" element={<GallMinorBoardListPage />} />
-        <Route path="ngallery/board/write" element={<GallMinorBoardWritePage />} />
-        <Route path="ngallery/board/view" element={<GallBoardViewPage />} />
+        <Route path="mini/board/lists" element={<GallMinorBoardListPage />} />
+        <Route path="mini/board/write" element={<GallMinorBoardWritePage />} />
+        <Route path="mini/board/view" element={<GallBoardViewPage />} />
+        <Route path="ngallery/board/lists" element={<RedirectNgalleryToMiniLists />} />
+        <Route path="ngallery/board/write" element={<RedirectNgalleryToMiniWrite />} />
+        <Route path="ngallery/board/view" element={<RedirectNgalleryToMiniView />} />
         <Route path="board/view" element={<GallBoardViewPage />} />
         <Route path="*" element={<Navigate to="/gall" replace />} />
       </Routes>
