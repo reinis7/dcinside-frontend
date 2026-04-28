@@ -3,7 +3,6 @@ import { useQuery } from '@apollo/client/react'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { apolloClient } from '../../apollo/apolloClient'
 import { useAuth } from '../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 
@@ -105,16 +104,25 @@ const MINOR_BOARD_LIST_ATTEMPT_3 = gql`
   }
 `
 
-const GALLERY_DETAIL_QUERY = gql`
-  query GalleryDetail($galleryId: String!) {
+const GALLERY_LIST_PAGE_QUERY = gql`
+  query GalleryListPage($galleryId: String!, $first: Int = 50) {
     dcinsideGalleryByGalleryId(galleryId: $galleryId) {
-      position
       galleryId
       databaseId
       postName
       title
+      ownerDisplayName
+      ownerNickname
       status
       score
+      position
+    }
+
+    dcinsidePostsByGalleryId(galleryId: $galleryId, first: $first) {
+      id
+      databaseId
+      date
+      title
     }
   }
 `
@@ -221,182 +229,24 @@ export function GallMinorBoardListPage() {
   const galleryId = searchParams.get('id') || 'mgallery'
   const boardBase = loc.pathname.includes('/gall/mini/') ? 'mini' : 'mgallery'
   const [pageSize, setPageSize] = useState(50)
-  const [galleryMeta, setGalleryMeta] = useState({
-    title: `${galleryId} 갤러리`,
-    description: '',
-  })
-  const [listNodes, setListNodes] = useState([])
-  const [isListLoading, setIsListLoading] = useState(false)
-  const [listErrorMsg, setListErrorMsg] = useState('')
-  const { data: galleryDetailData, loading: isGalleryDetailLoading } = useQuery(GALLERY_DETAIL_QUERY, {
-    variables: { galleryId },
+
+  const { data, loading, error } = useQuery(GALLERY_LIST_PAGE_QUERY, {
+    variables: { galleryId, first: pageSize },
     fetchPolicy: 'network-only',
   })
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadList() {
-      setIsListLoading(true)
-      setListErrorMsg('')
-      try {
-        const variables = { galleryId: String(galleryId), first: pageSize }
-        try {
-          const { data } = await apolloClient.query({
-            query: MINOR_BOARD_LIST_ATTEMPT_1,
-            variables,
-            fetchPolicy: 'network-only',
-          })
-          const nodes = data?.dcinsideMinorPostsByGalleryId?.nodes ?? []
-          if (!cancelled) setListNodes(nodes)
-          return
-        } catch (err) {
-          const msg = firstGraphQLErrorMessage(err)
-          if (!isSchemaMismatchError(msg)) throw err
-        }
-
-        try {
-          const { data } = await apolloClient.query({
-            query: MINOR_BOARD_LIST_ATTEMPT_2,
-            variables,
-            fetchPolicy: 'network-only',
-          })
-          const nodes = data?.dcinsidePostsByGalleryId ?? []
-          if (!cancelled) setListNodes(nodes)
-          return
-        } catch (err) {
-          const msg = firstGraphQLErrorMessage(err)
-          if (!isSchemaMismatchError(msg)) throw err
-        }
-
-        try {
-          const { data } = await apolloClient.query({
-            query: MINOR_BOARD_LIST_ATTEMPT_6,
-            variables: { galleryId: String(galleryId), limit: pageSize },
-            fetchPolicy: 'network-only',
-          })
-          const nodes = data?.dcinsideMinorPostsByGalleryId?.nodes ?? []
-          if (!cancelled) setListNodes(nodes)
-          return
-        } catch (err) {
-          const msg = firstGraphQLErrorMessage(err)
-          if (!isSchemaMismatchError(msg)) throw err
-        }
-
-        try {
-          const { data } = await apolloClient.query({
-            query: MINOR_BOARD_LIST_ATTEMPT_4,
-            variables,
-            fetchPolicy: 'network-only',
-          })
-          const nodes = data?.posts?.nodes ?? []
-          if (!cancelled) setListNodes(nodes)
-          return
-        } catch (err) {
-          const msg = firstGraphQLErrorMessage(err)
-          if (!isSchemaMismatchError(msg)) throw err
-        }
-
-        try {
-          const { data } = await apolloClient.query({
-            query: MINOR_BOARD_LIST_ATTEMPT_5,
-            variables,
-            fetchPolicy: 'network-only',
-          })
-          const nodes = data?.posts?.nodes ?? []
-          if (!cancelled) setListNodes(nodes)
-          return
-        } catch (err) {
-          const msg = firstGraphQLErrorMessage(err)
-          if (!isSchemaMismatchError(msg)) throw err
-        }
-
-        // last fallback: global recent posts (keeps page from being blank)
-        const { data } = await apolloClient.query({
-          query: MINOR_BOARD_LIST_ATTEMPT_3,
-          variables: { first: pageSize },
-          fetchPolicy: 'network-only',
-        })
-        const nodes = data?.posts?.nodes ?? []
-        if (!cancelled) setListNodes(nodes)
-      } catch (err) {
-        if (!cancelled) {
-          setListErrorMsg(firstGraphQLErrorMessage(err))
-          setListNodes([])
-        }
-      } finally {
-        if (!cancelled) setIsListLoading(false)
-      }
-    }
-
-    loadList()
-    return () => {
-      cancelled = true
-    }
-  }, [galleryId, pageSize])
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadGalleryMeta() {
-      const variables = {
-        parentTopics: GALLERY_PARENT_TOPICS,
-        limit: 50,
-        galleryTypeName: boardBase === 'mini' ? '미니' : '마이너',
-      }
-      try {
-        const { data: metaData } = await apolloClient.query({
-          query: GALLERY_META_WITH_DESCRIPTION_QUERY,
-          variables,
-          fetchPolicy: 'network-only',
-        })
-        const galleries = flattenGalleries(metaData?.dcinsideGalleryTopicTree)
-        const matched = galleries.find((gallery) => String(gallery?.slug ?? gallery?.databaseId ?? '') === galleryId)
-        if (cancelled) return
-        if (!matched) {
-          setGalleryMeta({ title: `${galleryId} 갤러리`, description: '' })
-          return
-        }
-        setGalleryMeta({
-          title: matched.title ? stripHtml(matched.title) : `${galleryId} 갤러리`,
-          description: matched.description ? stripHtml(matched.description) : '',
-        })
-      } catch {
-        try {
-          const { data: metaData } = await apolloClient.query({
-            query: GALLERY_META_QUERY,
-            variables,
-            fetchPolicy: 'network-only',
-          })
-          const galleries = flattenGalleries(metaData?.dcinsideGalleryTopicTree)
-          const matched = galleries.find((gallery) => String(gallery?.slug ?? gallery?.databaseId ?? '') === galleryId)
-          if (cancelled) return
-          setGalleryMeta({
-            title: matched?.title ? stripHtml(matched.title) : `${galleryId} 갤러리`,
-            description: '',
-          })
-        } catch {
-          if (cancelled) return
-          setGalleryMeta({ title: `${galleryId} 갤러리`, description: '' })
-        }
-      }
-    }
-
-    loadGalleryMeta()
-    return () => {
-      cancelled = true
-    }
-  }, [galleryId, boardBase])
-
   const rows = useMemo(() => {
-    return toRows(listNodes)
-  }, [listNodes])
-  const galleryDetail = galleryDetailData?.dcinsideGalleryByGalleryId ?? null
-  const galleryTitle = galleryDetail?.title ? stripHtml(galleryDetail.title) : galleryMeta.title
+    return toRows(data?.dcinsidePostsByGalleryId ?? [])
+  }, [data])
+  const galleryDetail = data?.dcinsideGalleryByGalleryId ?? null
+  const galleryTitle = galleryDetail?.title ? stripHtml(galleryDetail.title) : `${galleryId} 갤러리`
   const galleryStatus = galleryDetail?.status || '-'
   const galleryPosition = galleryDetail?.position ?? '-'
   const galleryScore = galleryDetail?.score ?? '-'
   const galleryPostName = galleryDetail?.postName || '일반'
+  const ownerDisplayName = galleryDetail?.ownerDisplayName || ''
+  const ownerNickname = galleryDetail?.ownerNickname || ''
+  const managerLabel = (ownerDisplayName || ownerNickname || '').trim() || '-'
   const displayName = viewer?.username || viewer?.name || '회원'
   const loginHref = `/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`
   const writeHref = `/gall/${boardBase}/board/write/?id=${encodeURIComponent(galleryId)}`
@@ -410,7 +260,7 @@ export function GallMinorBoardListPage() {
 
         <div className="grid grid-cols-[1fr_190px] border-b border-[#d9d9d9] bg-[#f7f8fb]">
           <div className="px-3 py-2 text-[12px] text-[#666]">
-            <div>{galleryMeta.description || '게시물 목록입니다. 최신순으로 표시됩니다.'}</div>
+            <div>게시물 목록입니다. 최신순으로 표시됩니다.</div>
             <div className="mt-1 text-[#888]">
               상태: {galleryStatus}
               <span className="mx-1 text-[#bbb]">|</span>
@@ -418,11 +268,12 @@ export function GallMinorBoardListPage() {
               <span className="mx-1 text-[#bbb]">|</span>
               DB: {galleryDetail?.databaseId ?? '-'}
             </div>
+            {error ? <div className="mt-1 text-[#d31900]">불러오기 실패: {firstGraphQLErrorMessage(error)}</div> : null}
           </div>
           <div className="border-l border-[#d9d9d9] px-3 py-2 text-center">
-            <div className="text-[34px] font-bold leading-none text-[#222]">{isGalleryDetailLoading ? '--' : galleryPosition}</div>
+            <div className="text-[34px] font-bold leading-none text-[#222]">{loading ? '--' : galleryPosition}</div>
             <div className="mt-1 text-[12px] font-semibold text-[#2f3d8f]">흥한갤 순위</div>
-            <div className="mt-1 text-[11px] text-[#666]">점수 {isGalleryDetailLoading ? '--' : galleryScore}</div>
+            <div className="mt-1 text-[11px] text-[#666]">점수 {loading ? '--' : galleryScore}</div>
           </div>
         </div>
 
@@ -478,28 +329,28 @@ export function GallMinorBoardListPage() {
               </tr>
             </thead>
             <tbody>
-              {isListLoading ? (
+              {loading ? (
                 <tr>
                   <td className="px-2 py-8 text-center text-[#666]" colSpan={7}>
                     게시글 불러오는 중...
                   </td>
                 </tr>
               ) : null}
-              {!isListLoading && listErrorMsg ? (
+              {!loading && error ? (
                 <tr>
                   <td className="px-2 py-8 text-center text-[#d31900]" colSpan={7}>
-                    게시글을 불러오지 못했습니다: {listErrorMsg}
+                    게시글을 불러오지 못했습니다: {firstGraphQLErrorMessage(error)}
                   </td>
                 </tr>
               ) : null}
-              {!isListLoading && !listErrorMsg && rows.length === 0 ? (
+              {!loading && !error && rows.length === 0 ? (
                 <tr>
                   <td className="px-2 py-8 text-center text-[#666]" colSpan={7}>
                     게시글이 없습니다.
                   </td>
                 </tr>
               ) : null}
-              {!isListLoading && !listErrorMsg
+              {!loading && !error
                 ? rows.map((row) => (
                     <tr key={`${row.no}_${row.title}`} className="border-b border-[#efefef] text-[#333]">
                       <td className="px-2 py-1.5 text-center text-[#666]">{row.no}</td>
@@ -575,6 +426,27 @@ export function GallMinorBoardListPage() {
               </div>
             </>
           )}
+        </div>
+
+        <div className="border border-[#d3d7e2] bg-white p-3">
+          <div className="mb-2 text-[14px] font-bold text-[#222]">갤러리 정보</div>
+          <dl className="grid grid-cols-[64px_1fr] gap-x-3 gap-y-2 text-[12px] text-[#444]">
+            <dt className="font-semibold">매니저</dt>
+            <dd className="truncate">
+              {managerLabel}{galleryDetail?.galleryId ? ` (${galleryDetail.galleryId})` : ''}
+            </dd>
+            <dt className="font-semibold">부매니저</dt>
+            <dd className="truncate">없음</dd>
+            <dt className="font-semibold">개설일</dt>
+            <dd className="truncate">-</dd>
+          </dl>
+          <a
+            href="#"
+            className="mt-2 inline-block text-[12px] text-[#2f4aa0] hover:underline"
+            onClick={(e) => e.preventDefault()}
+          >
+            갤러리 관리 내역
+          </a>
         </div>
 
         <div className="border border-[#d3d7e2] bg-white p-3">

@@ -53,13 +53,22 @@ export function Header() {
             <Link to="/gall" className={location.pathname === '/gall' ? 'text-[#ffd15c]' : 'hover:underline'}>
               갤러리
             </Link>
-            <Link to="/gall/m" className={location.pathname.startsWith('/gall/m') ? 'text-[#ffd15c]' : 'hover:underline'}>
+            <Link
+              to="/gall/m"
+              className={/^\/gall\/m(\/|$)/.test(location.pathname) ? 'text-[#ffd15c]' : 'hover:underline'}
+            >
               마이너갤
             </Link>
-            <Link to="/gall/n" className={location.pathname.startsWith('/gall/n') ? 'text-[#ffd15c]' : 'hover:underline'}>
+            <Link
+              to="/gall/n"
+              className={/^\/gall\/n(\/|$)/.test(location.pathname) || /^\/gall\/mini(\/|$)/.test(location.pathname) ? 'text-[#ffd15c]' : 'hover:underline'}
+            >
               미니갤
             </Link>
-            <Link to="/gall/p" className={location.pathname.startsWith('/gall/p') ? 'text-[#ffd15c]' : 'hover:underline'}>
+            <Link
+              to="/gall/p"
+              className={/^\/gall\/p(\/|$)/.test(location.pathname) ? 'text-[#ffd15c]' : 'hover:underline'}
+            >
               인물갤
             </Link>
             <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>

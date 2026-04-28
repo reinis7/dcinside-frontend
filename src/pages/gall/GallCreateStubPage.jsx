@@ -97,13 +97,18 @@ export function GallCreateStubPage() {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  function isSchemaMismatchError(message) {
+    if (!message) return false
+    return /Cannot query field|Unknown type|Unknown argument|not defined by type|did you mean|InputObject|Field .*? is not defined/i.test(message)
+  }
+
   async function handleCreate() {
     if (!canSubmit) {
       window.alert('필수 입력/동의 항목을 확인해 주세요.')
       return
     }
 
-    const payload = {
+    const basePayload = {
       name: form.name.trim(),
       description: form.description.trim(),
       slug: form.slug.trim(),
@@ -112,13 +117,33 @@ export function GallCreateStubPage() {
       gallery_type: selectedGalleryTypeDatabaseId,
       galleryTopicId: String(form.topicId).trim(),
     }
+    // dcinside backend typically uses galleryId as the actual gallery identifier (often same as slug).
+    // Send it for minor/mini; retry without it if schema rejects the field.
+    const payload = createTopicKey === 'minor' || createTopicKey === 'mini'
+      ? { ...basePayload, galleryId: form.slug.trim() }
+      : basePayload
 
     setIsSubmitting(true)
     try {
-      const { data } = await apolloClient.mutate({
-        mutation: CREATE_GALLERY_MUTATION,
-        variables: { input: payload },
-      })
+      let data
+      try {
+        const res = await apolloClient.mutate({
+          mutation: CREATE_GALLERY_MUTATION,
+          variables: { input: payload },
+        })
+        data = res?.data
+      } catch (err) {
+        const msg = firstGraphQLErrorMessage(err)
+        if ((createTopicKey === 'minor' || createTopicKey === 'mini') && isSchemaMismatchError(msg)) {
+          const res2 = await apolloClient.mutate({
+            mutation: CREATE_GALLERY_MUTATION,
+            variables: { input: basePayload },
+          })
+          data = res2?.data
+        } else {
+          throw err
+        }
+      }
       const result = data?.dcinsideCreateGallery
       if (!result?.success) {
         throw new Error(result?.message || '갤러리 생성에 실패했습니다.')

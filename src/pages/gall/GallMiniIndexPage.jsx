@@ -8,25 +8,41 @@ import { BlockLoader } from '../../components/common/Loader'
 const GALLERY_PARENT_TOPICS = [
   '연예',
   '게임',
+  '해외방송',
+  '게임',
   '취미',
   '만화/애니',
-  '해외방송',
-  '음식',
-  '국내방송',
-  '음악',
   '스포츠',
   '스포츠스타',
-  '생활',
-  '학술',
-  '대학',
-  '직업',
-  '금융/재테크',
-  '성공/계발',
   '디지털/IT',
   '교통/운송',
+  '음식',
+  '패션',
+  '음악',
+  '여행/풍경',
+  '합성',
+  '생물',
   '건강/심리',
+  '학술',
   '교육',
+  '공무원',
+  '대학',
   '수능',
+  '직업',
+  '정치인/유명인',
+  '밀리터리',
+  '금융/재테크',
+  '성공/계발',
+  '생활',
+  '지역',
+  '쇼핑/장터',
+  '정부/기관',
+  '기업',
+  '이슈',
+  '미디어',
+  '성인',
+  '기타',
+
 ]
 
 const MINI_TOPIC_TREE_QUERY = gql`
@@ -186,7 +202,7 @@ export function GallMiniIndexPage() {
 
       <div className="border border-[#3b4890] bg-white">
         <div className="flex items-center justify-between border-b border-[#d9d9d9] px-3 py-2">
-          <div className="text-[13px] font-bold text-[#3b4890]">종합 미니 갤러리</div>
+          <div className="text-[13px] font-bold text-[#3b4890]">흥한 미니 갤러리</div>
           <div className="flex items-center gap-1 text-[12px] text-[#666]">
             <span className="rounded-full border border-[#d9d9d9] bg-[#f6f6f6] px-2 py-[2px]">전체 순위</span>
             <button type="button" className="h-[18px] w-[18px] border border-[#cfcfcf] bg-white text-[11px]" aria-label="이전">
