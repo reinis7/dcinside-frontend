@@ -2,9 +2,11 @@ import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
 import { useEffect, useMemo, useState } from 'react'
 import JoditEditor from 'jodit-react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import 'jodit/es2021/jodit.min.css'
 import { useAuth } from '../../auth/authContext'
+import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
+import { apolloClient } from '../../apollo/apolloClient'
 
 const GALLERY_DETAIL_QUERY = gql`
   query GalleryWriteDetail($galleryId: String!) {
@@ -16,6 +18,103 @@ const GALLERY_DETAIL_QUERY = gql`
   }
 `
 
+function buildCreatePostMutation(variant) {
+  if (variant === 'metaInput') {
+    return gql`
+      mutation CreatePostWithGalleryId($title: String!, $content: String!, $galleryId: String!) {
+        createPost(
+          input: {
+            title: $title
+            content: $content
+            status: PUBLISH
+            metaInput: { gallery_id: $galleryId }
+          }
+        ) {
+          post {
+            id
+            databaseId
+          }
+        }
+      }
+    `
+  }
+  if (variant === 'metaDataArray') {
+    return gql`
+      mutation CreatePostWithGalleryId($title: String!, $content: String!, $galleryId: String!) {
+        createPost(
+          input: {
+            title: $title
+            content: $content
+            status: PUBLISH
+            metaData: [{ key: "gallery_id", value: $galleryId }]
+          }
+        ) {
+          post {
+            id
+            databaseId
+          }
+        }
+      }
+    `
+  }
+  if (variant === 'customGalleryIdField') {
+    return gql`
+      mutation CreatePostWithGalleryId($title: String!, $content: String!, $galleryId: String!) {
+        createPost(
+          input: {
+            title: $title
+            content: $content
+            status: PUBLISH
+            galleryId: $galleryId
+          }
+        ) {
+          post {
+            id
+            databaseId
+          }
+        }
+      }
+    `
+  }
+  return gql`
+    mutation CreatePostSimple($title: String!, $content: String!) {
+      createPost(input: { title: $title, content: $content, status: PUBLISH }) {
+        post {
+          id
+          databaseId
+        }
+      }
+    }
+  `
+}
+
+function isSchemaMismatchError(message) {
+  if (!message) return false
+  return /Cannot query field|Unknown type|Unknown argument|not defined by type|did you mean|InputObject/i.test(message)
+}
+
+const CREATE_MINOR_POST_MUTATION = gql`
+  mutation CreateMinorPostWithGalleryId($title: String!, $content: String!, $galleryId: String!) {
+    dcinsideCreateMinorPostWithGalleryId(input: { title: $title, content: $content, galleryId: $galleryId }) {
+      success
+      message
+      databaseId
+    }
+  }
+`
+
+async function createMinorPostWithGalleryId({ title, content, galleryId }) {
+  const { data } = await apolloClient.mutate({
+    mutation: CREATE_MINOR_POST_MUTATION,
+    variables: { title, content, galleryId },
+  })
+  const payload = data?.dcinsideCreateMinorPostWithGalleryId
+  if (!payload?.success) {
+    throw new Error(payload?.message || '게시글 등록에 실패했습니다.')
+  }
+  return payload
+}
+
 function stripHtml(html) {
   if (!html) return ''
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -23,9 +122,11 @@ function stripHtml(html) {
 
 export function GallMinorBoardWritePage() {
   const navigate = useNavigate()
+  const loc = useLocation()
   const [searchParams] = useSearchParams()
-  const { viewer } = useAuth()
+  const { viewer, isAuthed } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
+  const boardBase = loc.pathname.includes('/gall/ngallery/') ? 'ngallery' : 'mgallery'
   const { data } = useQuery(GALLERY_DETAIL_QUERY, {
     variables: { galleryId },
     fetchPolicy: 'network-only',
@@ -35,8 +136,9 @@ export function GallMinorBoardWritePage() {
   const [title, setTitle] = useState('')
   const [nickname, setNickname] = useState('')
   const [htmlContent, setHtmlContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const listHref = useMemo(() => `/gall/mgallery/board/lists/?id=${encodeURIComponent(galleryId)}`, [galleryId])
+  const listHref = useMemo(() => `/gall/${boardBase}/board/lists/?id=${encodeURIComponent(galleryId)}`, [boardBase, galleryId])
   const displayName = viewer?.username || viewer?.name || ''
   const editorConfig = useMemo(
     () => ({
@@ -60,6 +162,34 @@ export function GallMinorBoardWritePage() {
     setNickname(displayName)
   }, [displayName])
 
+  async function handleSubmit() {
+    if (isSubmitting) return
+    if (!isAuthed) {
+      navigate(`/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`)
+      return
+    }
+    const trimmedTitle = title.trim()
+    const trimmedContent = htmlContent.trim()
+    if (!trimmedTitle || !trimmedContent) {
+      window.alert('제목과 내용을 입력해 주세요.')
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      await createMinorPostWithGalleryId({
+        title: trimmedTitle,
+        content: trimmedContent,
+        galleryId: String(galleryId),
+      })
+      window.alert('게시글이 등록되었습니다.')
+      navigate(listHref)
+    } catch (err) {
+      window.alert(firstGraphQLErrorMessage(err))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section className="border border-[#cfcfcf] bg-white">
       <div className="flex items-center justify-between border-b border-[#cfd3dc] px-3 py-2">
@@ -81,7 +211,7 @@ export function GallMinorBoardWritePage() {
 
       <div className="p-5">
         <div className="border border-[#d9d9d9]">
-          <div className="grid grid-cols-[180px_180px_1fr] gap-2 border-b border-[#dedede] bg-[#f8f8f8] px-3 py-2">
+          <div className="grid grid-cols-[180px_1fr] gap-2 border-b border-[#dedede] bg-[#f8f8f8] px-3 py-2">
             <input
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
@@ -89,7 +219,6 @@ export function GallMinorBoardWritePage() {
               placeholder="닉네임"
               readOnly={Boolean(displayName)}
             />
-            <input className="h-[34px] border border-[#cfcfcf] bg-white px-2 text-[14px]" placeholder="비밀번호" />
             <div className="flex items-center gap-3 text-[15px] text-[#444]">
               <span className="inline-flex rounded-full bg-[#2f3d8f] px-3 py-1 text-white">일반</span>
               <span>실베</span>
@@ -153,11 +282,16 @@ export function GallMinorBoardWritePage() {
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button type="button" className="h-[48px] min-w-[98px] rounded border border-[#4d4d4d] bg-[#666] px-6 text-[22px] font-bold text-white" onClick={() => navigate(listHref)}>
+          <button type="button" className="h-[28px] min-w-[68px] rounded border border-[#4d4d4d] bg-[#666] px-3 text-[13px] font-bold text-white" onClick={() => navigate(listHref)}>
             취소
           </button>
-          <button type="button" className="h-[48px] min-w-[98px] rounded border border-[#293f90] bg-[#2f4aa0] px-6 text-[22px] font-bold text-white">
-            등록
+          <button
+            type="button"
+            className="h-[28px] min-w-[68px] rounded border border-[#293f90] bg-[#2f4aa0] px-3 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? '등록중' : '등록'}
           </button>
         </div>
 

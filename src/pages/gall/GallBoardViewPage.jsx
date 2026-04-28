@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
 import dayjs from 'dayjs'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 
 const POST_DETAIL_QUERY = gql`
   query GallBoardDetail($id: ID!) {
@@ -37,6 +37,7 @@ function formatDateTime(isoDate) {
 }
 
 export function GallBoardViewPage() {
+  const loc = useLocation()
   const [searchParams] = useSearchParams()
   const boardId = searchParams.get('id') || 'dcbest'
   const postNo = searchParams.get('no') || ''
@@ -51,16 +52,23 @@ export function GallBoardViewPage() {
   const post = data?.post ?? null
   const categoryName = post?.categories?.edges?.[0]?.node?.name ?? '게시판'
   const title = stripHtml(post?.title) || '제목 없음'
+  const listHref = loc.pathname.includes('/gall/mgallery/board/view')
+    ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(boardId)}`
+    : loc.pathname.includes('/gall/ngallery/board/view')
+      ? `/gall/ngallery/board/lists/?id=${encodeURIComponent(boardId)}`
+      : '/www'
 
   return (
     <section className="rounded border border-[#d3d3d3] bg-white">
       <div className="flex items-center justify-between border-b border-[#e5e5e5] px-4 py-2 text-[12px]">
         <div className="text-[#555]">
-          <span className="font-semibold">{boardId}</span>
+          <Link to={listHref} className="font-semibold hover:underline">
+            {boardId}
+          </Link>
           <span className="mx-1 text-[#bbb]">/</span>
           <span>{categoryName}</span>
         </div>
-        <Link to="/www" className="text-[#3b4890] hover:underline">
+        <Link to={listHref} className="text-[#3b4890] hover:underline">
           목록
         </Link>
       </div>
