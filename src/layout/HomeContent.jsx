@@ -22,7 +22,7 @@ export function HomeContent() {
             </button>
           </div>
           <a
-            href="https://gall.dcinside.com/board/lists/?id=dcbest"
+            href="/gall/board/lists/?id=dcbest"
             target="_blank"
             rel="noreferrer"
             className="ml-auto text-[12px] font-medium text-[#666] hover:text-[#0033a0] hover:underline"
