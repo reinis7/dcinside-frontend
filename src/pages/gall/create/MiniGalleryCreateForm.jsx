@@ -65,17 +65,20 @@ export function MiniGalleryCreateForm({
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => setFormField('visibility', 'public')}
-          className={`rounded border-2 bg-white p-4 text-left transition-colors ${
-            form.visibility === 'public' ? 'border-[#2f3d8f] bg-[#f5f8ff]' : 'border-[#ddd] hover:border-[#bbb]'
+        <label
+          className={`block cursor-pointer rounded border bg-white p-4 text-left ${
+            form.visibility === 'public' ? 'border-[#2f3d8f]' : 'border-[#ddd] hover:border-[#bbb]'
           }`}
+          onClick={() => setFormField('visibility', 'public')}
         >
           <div className="flex items-start gap-2">
-            <span className="mt-0.5 inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border border-[#999] bg-[#f0f0f0] text-[12px] text-[#666]">
-              {form.visibility === 'public' ? '✓' : ''}
-            </span>
+            <input
+              type="radio"
+              name="mini_gallery_visibility"
+              className="mt-0.5 h-[16px] w-[16px]"
+              checked={form.visibility === 'public'}
+              onChange={() => setFormField('visibility', 'public')}
+            />
             <div>
               <div className="text-[15px] font-bold text-[#222]">공개</div>
               <p className="mt-2 text-[12px] leading-[1.55] text-[#666]">
@@ -83,18 +86,22 @@ export function MiniGalleryCreateForm({
               </p>
             </div>
           </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => setFormField('visibility', 'private')}
-          className={`rounded border-2 bg-white p-4 text-left transition-colors ${
-            form.visibility === 'private' ? 'border-[#2f3d8f] bg-[#f5f8ff]' : 'border-[#ddd] hover:border-[#bbb]'
+        </label>
+
+        <label
+          className={`block cursor-pointer rounded border bg-white p-4 text-left ${
+            form.visibility === 'private' ? 'border-[#2f3d8f]' : 'border-[#ddd] hover:border-[#bbb]'
           }`}
+          onClick={() => setFormField('visibility', 'private')}
         >
           <div className="flex items-start gap-2">
-            <span className="mt-0.5 inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border border-[#999] bg-[#f0f0f0] text-[12px] text-[#666]">
-              {form.visibility === 'private' ? '✓' : ''}
-            </span>
+            <input
+              type="radio"
+              name="mini_gallery_visibility"
+              className="mt-0.5 h-[16px] w-[16px]"
+              checked={form.visibility === 'private'}
+              onChange={() => setFormField('visibility', 'private')}
+            />
             <div>
               <div className="text-[15px] font-bold text-[#222]">비공개</div>
               <p className="mt-2 text-[12px] leading-[1.55] text-[#666]">
@@ -102,7 +109,7 @@ export function MiniGalleryCreateForm({
               </p>
             </div>
           </div>
-        </button>
+        </label>
       </div>
 
       <p className="mt-3 text-[12px] leading-[1.55] text-[#d62400]">

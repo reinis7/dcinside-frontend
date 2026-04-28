@@ -144,8 +144,8 @@ const GALLERY_PARENT_TOPICS = [
 ]
 
 const GALLERY_META_WITH_DESCRIPTION_QUERY = gql`
-  query GalleryMetaWithDescription($parentTopics: [String!], $limit: Int) {
-    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit) {
+  query GalleryMetaWithDescription($parentTopics: [String!], $limit: Int, $galleryTypeName: String) {
+    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit, galleryTypeName: $galleryTypeName) {
       child {
         galleries {
           databaseId
@@ -159,8 +159,8 @@ const GALLERY_META_WITH_DESCRIPTION_QUERY = gql`
 `
 
 const GALLERY_META_QUERY = gql`
-  query GalleryMeta($parentTopics: [String!], $limit: Int) {
-    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit) {
+  query GalleryMeta($parentTopics: [String!], $limit: Int, $galleryTypeName: String) {
+    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit, galleryTypeName: $galleryTypeName) {
       child {
         galleries {
           databaseId
@@ -339,7 +339,11 @@ export function GallMinorBoardListPage() {
     let cancelled = false
 
     async function loadGalleryMeta() {
-      const variables = { parentTopics: GALLERY_PARENT_TOPICS, limit: 50 }
+      const variables = {
+        parentTopics: GALLERY_PARENT_TOPICS,
+        limit: 50,
+        galleryTypeName: boardBase === 'mini' ? '미니' : '마이너',
+      }
       try {
         const { data: metaData } = await apolloClient.query({
           query: GALLERY_META_WITH_DESCRIPTION_QUERY,
@@ -382,7 +386,7 @@ export function GallMinorBoardListPage() {
     return () => {
       cancelled = true
     }
-  }, [galleryId])
+  }, [galleryId, boardBase])
 
   const rows = useMemo(() => {
     return toRows(listNodes)

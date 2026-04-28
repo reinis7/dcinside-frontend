@@ -88,7 +88,7 @@ const TOPIC_LAYOUT_ROWS = [
 
 const GALLERY_TOPIC_TREE_QUERY = gql`
   query NewQuery($parentTopics: [String!], $limit: Int) {
-    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit) {
+    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit, galleryTypeName: "마이너") {
       name
       topicId
       slug

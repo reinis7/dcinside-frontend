@@ -30,15 +30,19 @@ const GALLERY_PARENT_TOPICS = [
 
 const MINI_TOPIC_TREE_QUERY = gql`
   query NewQuery($parentTopics: [String!], $limit: Int) {
-    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit) {
+    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit, galleryTypeName: "미니") {
+      topicId
       name
       galleryCount
       child {
+        topicId
+        name
         galleries {
           databaseId
           slug
           title
           status
+          score
         }
       }
     }
@@ -75,6 +79,30 @@ export function GallMiniIndexPage() {
         })),
       }
     })
+  }, [topicTree])
+
+  const topScoreGalleries = useMemo(() => {
+    const galleries = topicTree
+      .flatMap((t) => t?.child ?? [])
+      .flatMap((c) => c?.galleries ?? [])
+      .filter((g) => g?.title)
+
+    const unique = new Map()
+    galleries.forEach((g) => {
+      const key = String(g?.slug ?? g?.databaseId ?? '')
+      if (!key) return
+      if (!unique.has(key)) unique.set(key, g)
+    })
+
+    return Array.from(unique.values())
+      .map((g) => ({
+        key: String(g?.slug ?? g?.databaseId ?? g?.title),
+        id: String(g?.slug ?? g?.databaseId ?? ''),
+        title: stripHtml(g?.title),
+        score: typeof g?.score === 'number' ? g.score : Number(g?.score ?? 0),
+      }))
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 20)
   }, [topicTree])
 
   return (
@@ -147,6 +175,38 @@ export function GallMiniIndexPage() {
             </>
           )}
         </aside>
+      </div>
+
+      <div className="border border-[#3b4890] bg-white">
+        <div className="flex items-center justify-between border-b border-[#d9d9d9] px-3 py-2">
+          <div className="text-[13px] font-bold text-[#3b4890]">종합 미니 갤러리</div>
+          <div className="flex items-center gap-1 text-[12px] text-[#666]">
+            <span className="rounded-full border border-[#d9d9d9] bg-[#f6f6f6] px-2 py-[2px]">전체 순위</span>
+            <button type="button" className="h-[18px] w-[18px] border border-[#cfcfcf] bg-white text-[11px]" aria-label="이전">
+              ◀
+            </button>
+            <button type="button" className="h-[18px] w-[18px] border border-[#cfcfcf] bg-white text-[11px]" aria-label="다음">
+              ▶
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-x-6 gap-y-3 px-3 py-4">
+          {topScoreGalleries.map((g, idx) => (
+            <Link
+              key={g.key}
+              to={`/gall/mini/board/lists/?id=${encodeURIComponent(g.id)}`}
+              className="flex min-w-0 items-center gap-2 hover:underline"
+              title={g.title}
+            >
+              <span className="inline-flex h-[16px] min-w-[16px] items-center justify-center bg-[#3b4890] px-[3px] text-[11px] font-bold text-white">
+                {idx + 1}
+              </span>
+              <span className="truncate text-[13px] text-[#222]">{g.title}</span>
+            </Link>
+          ))}
+          {!topScoreGalleries.length ? <div className="px-1 py-2 text-[12px] text-[#888]">표시할 갤러리가 없습니다.</div> : null}
+        </div>
       </div>
 
       <div className="border border-[#3b4890] bg-white">

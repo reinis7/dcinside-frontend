@@ -108,6 +108,7 @@ export function GallCreateStubPage() {
       description: form.description.trim(),
       slug: form.slug.trim(),
       reason: isMiniCreatePath ? '미니 갤러리 개설' : form.reason.trim(),
+      ...(isMiniCreatePath ? { visibility: form.visibility } : {}),
       gallery_type: selectedGalleryTypeDatabaseId,
       galleryTopicId: String(form.topicId).trim(),
     }
