@@ -5,8 +5,10 @@ import { GallMiniIndexPage } from '../pages/gall/GallMiniIndexPage'
 import { GallPersonIndexPage } from '../pages/gall/GallPersonIndexPage'
 import { GallCreateStubPage } from '../pages/gall/GallCreateStubPage'
 import { GallBoardViewPage } from '../pages/gall/GallBoardViewPage'
+import { GallMainBoardListPage } from '../pages/gall/GallMainBoardListPage'
 import { GallMinorBoardListPage } from '../pages/gall/GallMinorBoardListPage'
 import { GallMinorBoardWritePage } from '../pages/gall/GallMinorBoardWritePage'
+import { GallMainBoardWritePage } from '../pages/gall/GallMainBoardWritePage'
 import { RequireAuth } from '../auth/RequireAuth'
 import { Header } from '../components/common/Header'
 import { DcFooter } from '../layout/DcFooter'
@@ -58,6 +60,8 @@ export function GallRoutes() {
         <Route path="ngallery/board/lists" element={<RedirectNgalleryToMiniLists />} />
         <Route path="ngallery/board/write" element={<RedirectNgalleryToMiniWrite />} />
         <Route path="ngallery/board/view" element={<RedirectNgalleryToMiniView />} />
+        <Route path="board/lists" element={<GallMainBoardListPage />} />
+        <Route path="board/write" element={<GallMainBoardWritePage />} />
         <Route path="board/view" element={<GallBoardViewPage />} />
         <Route path="*" element={<Navigate to="/gall" replace />} />
       </Routes>

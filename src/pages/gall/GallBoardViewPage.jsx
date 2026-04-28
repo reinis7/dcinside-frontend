@@ -24,9 +24,22 @@ const POST_DETAIL_QUERY = gql`
   }
 `
 
+function decodeHtmlEntities(text) {
+  if (!text) return ''
+  if (typeof document === 'undefined') return text
+  const el = document.createElement('textarea')
+  el.innerHTML = text
+  return el.value
+}
+
+function normalizeDashes(text) {
+  return String(text).replace(/[\u2013\u2014]/g, '-')
+}
+
 function stripHtml(html) {
   if (!html) return ''
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  const plain = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  return normalizeDashes(decodeHtmlEntities(plain))
 }
 
 function formatDateTime(isoDate) {
@@ -56,7 +69,9 @@ export function GallBoardViewPage() {
     ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(boardId)}`
     : loc.pathname.includes('/gall/mini/board/view')
       ? `/gall/mini/board/lists/?id=${encodeURIComponent(boardId)}`
-      : '/www'
+      : loc.pathname.includes('/gall/board/view')
+        ? `/gall/board/lists/?id=${encodeURIComponent(boardId)}`
+        : '/www'
 
   return (
     <section className="rounded border border-[#d3d3d3] bg-white">
