@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client/react'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
+import { BlockLoader } from '../../components/common/Loader'
 
 const GALLERY_PARENT_TOPICS = [
   '연예',
@@ -41,6 +42,7 @@ const MINI_TOPIC_TREE_QUERY = gql`
           databaseId
           slug
           title
+          description
           status
           score
         }
@@ -75,6 +77,7 @@ export function GallMiniIndexPage() {
         items: galleries.slice(0, 9).map((g) => ({
           key: String(g.slug ?? g.databaseId ?? g.title),
           title: stripHtml(g.title),
+          description: stripHtml(g.description),
           href: `/gall/mini/board/lists/?id=${encodeURIComponent(String(g.slug ?? g.databaseId ?? ''))}`,
         })),
       }
@@ -104,6 +107,10 @@ export function GallMiniIndexPage() {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 20)
   }, [topicTree])
+
+  if (loading) {
+    return <BlockLoader label="미니 갤러리 불러오는 중..." />
+  }
 
   return (
     <section className="grid gap-2 text-[12px]">
@@ -228,7 +235,7 @@ export function GallMiniIndexPage() {
                     <div className="h-[54px] w-[72px] bg-[#eff3f8]" />
                     <div className="min-w-0">
                       <div className="truncate text-[13px] font-bold text-[#222]">{item.title}</div>
-                      <div className="mt-1 truncate text-[12px] text-[#777]">미니 갤러리</div>
+                      <div className="mt-1 truncate text-[12px] text-[#777]">{item.description || '미니 갤러리'}</div>
                     </div>
                   </div>
                 </Link>

@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client/react'
 import { useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
+import { BlockLoader } from '../../components/common/Loader'
 
 const HOT_MINOR = [
   '지지직',
@@ -98,6 +99,7 @@ const MINOR_INDEX_PAGE_QUERY = gql`
           databaseId
           slug
           title
+          description
           status
         }
       }
@@ -231,6 +233,7 @@ export function GallMinorIndexPage() {
             key: `${gallery.databaseId ?? gallery.slug ?? gallery.title}`,
             label: gallery.title,
             slug: gallery.slug,
+            description: gallery.description,
             href: `/gall/mgallery/board/lists/?id=${encodeURIComponent(String(gallery.slug ?? gallery.databaseId ?? ''))}`,
           }))
       })
@@ -241,6 +244,7 @@ export function GallMinorIndexPage() {
 
   return (
     <section className="grid gap-2 text-[12px]">
+      {isTopicTreeLoading ? <BlockLoader label="마이너 갤러리 불러오는 중..." /> : null}
       <div className="grid grid-cols-[1fr_300px] gap-2">
         <div className="border border-[#d3d3d3] bg-white px-3 py-2">
           <div className="flex items-center justify-between gap-3">
@@ -470,7 +474,11 @@ export function GallMinorIndexPage() {
                       <ul key={colIdx} className="min-h-[360px] border-r border-[#ececec] px-3 py-2 last:border-r-0">
                         {column.map((gallery, rowIdx2) => (
                           <li key={`${gallery.key}_${rowIdx2}`} className="truncate py-[1px] text-[12px] leading-[1.45] text-[#444]">
-                            <a href={gallery.href} className="hover:underline">
+                            <a
+                              href={gallery.href}
+                              className="hover:underline"
+                              title={gallery.description ? `${gallery.label} — ${gallery.description}` : gallery.label}
+                            >
                               {gallery.label}
                             </a>
                           </li>

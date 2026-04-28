@@ -7,6 +7,7 @@ import 'jodit/es2021/jodit.min.css'
 import { useAuth } from '../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { apolloClient } from '../../apollo/apolloClient'
+import { InlineLoader } from '../../components/common/Loader'
 
 const GALLERY_DETAIL_QUERY = gql`
   query GalleryWriteDetail($galleryId: String!) {
@@ -127,7 +128,7 @@ export function GallMinorBoardWritePage() {
   const { viewer, isAuthed } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
   const boardBase = loc.pathname.includes('/gall/mini/') ? 'mini' : 'mgallery'
-  const { data } = useQuery(GALLERY_DETAIL_QUERY, {
+  const { data, loading: isGalleryLoading } = useQuery(GALLERY_DETAIL_QUERY, {
     variables: { galleryId },
     fetchPolicy: 'network-only',
   })
@@ -193,7 +194,9 @@ export function GallMinorBoardWritePage() {
   return (
     <section className="border border-[#cfcfcf] bg-white">
       <div className="flex items-center justify-between border-b border-[#cfd3dc] px-3 py-2">
-        <h2 className="text-[42px] leading-none font-bold tracking-[-0.02em] text-[#232c5f]">{galleryTitle}</h2>
+        <h2 className="text-[42px] leading-none font-bold tracking-[-0.02em] text-[#232c5f]">
+          {isGalleryLoading ? <InlineLoader label="갤러리 불러오는 중..." /> : galleryTitle}
+        </h2>
         <div className="flex items-center gap-2 text-[12px] text-[#666]">
           <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
             연관 갤러리
