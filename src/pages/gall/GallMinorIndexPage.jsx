@@ -86,9 +86,9 @@ const TOPIC_LAYOUT_ROWS = [
   ],
 ]
 
-const GALLERY_TOPIC_TREE_QUERY = gql`
-  query NewQuery($parentTopics: [String!], $limit: Int) {
-    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $limit, galleryTypeName: "마이너") {
+const MINOR_INDEX_PAGE_QUERY = gql`
+  query MinorIndexPage($parentTopics: [String!], $topicLimit: Int, $topLimit: Int = 20, $newLimit: Int = 20) {
+    dcinsideGalleryTopicTree(parentTopics: $parentTopics, limit: $topicLimit, galleryTypeName: "마이너") {
       name
       topicId
       slug
@@ -101,6 +101,24 @@ const GALLERY_TOPIC_TREE_QUERY = gql`
           status
         }
       }
+    }
+
+    dcinsideTopGalleriesByType(galleryTypes: ["마이너"], limit: $topLimit) {
+      position
+      databaseId
+      slug
+      title
+      status
+      score
+    }
+
+    dcinsideNewGalleriesByType(galleryTypeName: "마이너", limit: $newLimit) {
+      position
+      databaseId
+      slug
+      title
+      status
+      score
     }
   }
 `
@@ -131,14 +149,62 @@ function MinorCreateButton({ onClick, isBusy = false }) {
 export function GallMinorIndexPage() {
   const navigate = useNavigate()
   const { isAuthed, isLoading, viewer, logout } = useAuth()
-  const { data: topicTreeData, loading: isTopicTreeLoading } = useQuery(GALLERY_TOPIC_TREE_QUERY, {
+  const { data, loading: isTopicTreeLoading } = useQuery(MINOR_INDEX_PAGE_QUERY, {
     variables: {
       parentTopics: GALLERY_PARENT_TOPICS,
-      limit: 50,
+      topicLimit: 50,
+      topLimit: 20,
+      newLimit: 20,
     },
     fetchPolicy: 'network-only',
   })
-  const topicTree = topicTreeData?.dcinsideGalleryTopicTree ?? []
+  const topicTree = data?.dcinsideGalleryTopicTree ?? []
+  const topMinor = useMemo(() => {
+    const list = data?.dcinsideTopGalleriesByType ?? []
+    return list
+      .filter((g) => g?.title)
+      .map((g) => ({
+        key: String(g.slug ?? g.databaseId ?? g.title),
+        id: String(g.slug ?? g.databaseId ?? ''),
+        title: g.title,
+        position: Number(g.position ?? 0),
+        score: typeof g.score === 'number' ? g.score : Number(g.score ?? 0),
+      }))
+      .sort((a, b) => {
+        // prefer explicit position, fallback to score desc
+        const ap = a.position || 0
+        const bp = b.position || 0
+        if (ap && bp) return ap - bp
+        return (b.score || 0) - (a.score || 0)
+      })
+      .slice(0, 10)
+  }, [data])
+
+  const newMinorColumns = useMemo(() => {
+    const list = data?.dcinsideNewGalleriesByType ?? []
+    const items = list
+      .filter((g) => g?.title)
+      .map((g) => ({
+        key: String(g.slug ?? g.databaseId ?? g.title),
+        id: String(g.slug ?? g.databaseId ?? ''),
+        title: g.title,
+        position: Number(g.position ?? 0),
+        score: typeof g.score === 'number' ? g.score : Number(g.score ?? 0),
+      }))
+      .sort((a, b) => {
+        const ap = a.position || 0
+        const bp = b.position || 0
+        if (ap && bp) return ap - bp
+        return (b.score || 0) - (a.score || 0)
+      })
+      .slice(0, 12)
+
+    const mid = Math.ceil(items.length / 2)
+    return {
+      left: items.slice(0, mid),
+      right: items.slice(mid),
+    }
+  }, [data])
 
   const handleCreate = () => {
     if (isLoading) return
@@ -268,13 +334,22 @@ export function GallMinorIndexPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[12px] leading-[1.35] text-[#444]">
-                {HOT_MINOR.map((name, idx) => (
-                  <a key={name} href="#" className="truncate hover:underline" onClick={(e) => e.preventDefault()}>
+                {(topMinor.length ? topMinor : HOT_MINOR.map((name, idx) => ({ key: name, id: '', title: name, position: idx + 1 }))).map((item, idx) => (
+                  <Link
+                    key={item.key}
+                    to={item.id ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(item.id)}` : '#'}
+                    className="truncate hover:underline"
+                    onClick={(e) => {
+                      if (item.id) return
+                      e.preventDefault()
+                    }}
+                    title={item.title}
+                  >
                     <span className="mr-1.5 inline-flex h-4 w-4 items-center justify-center bg-[#ffa500] text-[11px] font-bold text-white">
                       {idx + 1}
                     </span>
-                    {name}
-                  </a>
+                    {item.title}
+                  </Link>
                 ))}
               </div>
             </div>
@@ -284,18 +359,49 @@ export function GallMinorIndexPage() {
                 <span className="mr-1 text-[#ff4700]">NEW</span>
                 <span className="text-[#222]">신설 마이너 갤러리</span>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[12px] leading-[1.35] text-[#444]">
-                {NEW_MINOR.map(([left, right]) => (
-                  <div key={left} className="contents">
-                    <a href="#" className="truncate hover:underline" onClick={(e) => e.preventDefault()}>
-                      {left}
-                    </a>
-                    <a href="#" className="truncate hover:underline" onClick={(e) => e.preventDefault()}>
-                      {right}
-                    </a>
-                  </div>
-                ))}
-              </div>
+              {newMinorColumns.left.length ? (
+                <div className="grid grid-cols-2 gap-x-4 text-[12px] leading-[1.35] text-[#444]">
+                  <ul className="grid gap-y-0.5">
+                    {newMinorColumns.left.map((item) => (
+                      <li key={item.key} className="truncate">
+                        <Link
+                          to={`/gall/mgallery/board/lists/?id=${encodeURIComponent(item.id)}`}
+                          className="hover:underline"
+                          title={item.title}
+                        >
+                          {item.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="grid gap-y-0.5">
+                    {newMinorColumns.right.map((item) => (
+                      <li key={item.key} className="truncate">
+                        <Link
+                          to={`/gall/mgallery/board/lists/?id=${encodeURIComponent(item.id)}`}
+                          className="hover:underline"
+                          title={item.title}
+                        >
+                          {item.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[12px] leading-[1.35] text-[#444]">
+                  {NEW_MINOR.map(([left, right]) => (
+                    <div key={left} className="contents">
+                      <a href="#" className="truncate hover:underline" onClick={(e) => e.preventDefault()}>
+                        {left}
+                      </a>
+                      <a href="#" className="truncate hover:underline" onClick={(e) => e.preventDefault()}>
+                        {right}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
