@@ -9,6 +9,7 @@ import { GallMinorBoardListPage } from '../pages/gall/GallMinorBoardListPage'
 import { GallMinorBoardWritePage } from '../pages/gall/GallMinorBoardWritePage'
 import { RequireAuth } from '../auth/RequireAuth'
 import { Header } from '../components/common/Header'
+import { DcFooter } from '../layout/DcFooter'
 
 function GallLayout({ children }) {
   return (
@@ -16,6 +17,7 @@ function GallLayout({ children }) {
       <Header />
 
       <main className="mx-auto w-[1050px] px-1 py-3 text-[12px]">{children}</main>
+      <DcFooter />
     </div>
   )
 }
