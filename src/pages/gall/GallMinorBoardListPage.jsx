@@ -242,9 +242,11 @@ export function GallMinorBoardListPage() {
   const galleryId = searchParams.get('id') || 'mgallery'
   const boardBase = loc.pathname.includes('/gall/mini/')
     ? 'mini'
-    : loc.pathname.includes('/gall/board/')
-      ? 'board'
-      : 'mgallery'
+    : loc.pathname.includes('/gall/p/') || loc.pathname.includes('/gall/person/')
+      ? 'p'
+      : loc.pathname.includes('/gall/board/')
+        ? 'board'
+        : 'mgallery'
   const [pageSize, setPageSize] = useState(50)
 
   const { data, loading, error } = useQuery(GALLERY_LIST_PAGE_QUERY, {

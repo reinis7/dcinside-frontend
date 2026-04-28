@@ -69,6 +69,8 @@ export function GallBoardViewPage() {
     ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(boardId)}`
     : loc.pathname.includes('/gall/mini/board/view')
       ? `/gall/mini/board/lists/?id=${encodeURIComponent(boardId)}`
+      : loc.pathname.includes('/gall/p/board/view') || loc.pathname.includes('/gall/person/board/view')
+        ? `/gall/p/board/lists/?id=${encodeURIComponent(boardId)}`
       : loc.pathname.includes('/gall/board/view')
         ? `/gall/board/lists/?id=${encodeURIComponent(boardId)}`
         : '/www'

@@ -104,6 +104,29 @@ const CREATE_MINOR_POST_MUTATION = gql`
   }
 `
 
+async function createPostWithGalleryIdFallback({ title, content, galleryId }) {
+  // Try multiple schema variants (metaInput -> metaData -> custom field -> plain).
+  const variants = ['metaInput', 'metaDataArray', 'customGalleryIdField', 'simple']
+  let lastErr = null
+  for (const variant of variants) {
+    try {
+      const mutation = buildCreatePostMutation(variant === 'simple' ? 'simple' : variant)
+      const variables = variant === 'simple' ? { title, content } : { title, content, galleryId }
+      const { data } = await apolloClient.mutate({ mutation, variables })
+      const post = data?.createPost?.post ?? null
+      if (!post?.databaseId && !post?.id) {
+        throw new Error('게시글 등록에 실패했습니다.')
+      }
+      return post
+    } catch (err) {
+      const msg = firstGraphQLErrorMessage(err)
+      if (!isSchemaMismatchError(msg)) throw err
+      lastErr = err
+    }
+  }
+  throw lastErr || new Error('게시글 등록에 실패했습니다.')
+}
+
 async function createMinorPostWithGalleryId({ title, content, galleryId }) {
   const { data } = await apolloClient.mutate({
     mutation: CREATE_MINOR_POST_MUTATION,
@@ -114,6 +137,21 @@ async function createMinorPostWithGalleryId({ title, content, galleryId }) {
     throw new Error(payload?.message || '게시글 등록에 실패했습니다.')
   }
   return payload
+}
+
+async function createGalleryPost({ boardBase, title, content, galleryId }) {
+  // Keep restricted mutation for minor/mini only, but fall back to createPost variants for everything else
+  // (and also for minor/mini when the custom mutation isn't available).
+  if (boardBase === 'mgallery' || boardBase === 'mini') {
+    try {
+      return await createMinorPostWithGalleryId({ title, content, galleryId })
+    } catch (e) {
+      const msg = firstGraphQLErrorMessage(e)
+      if (!isSchemaMismatchError(msg)) throw e
+      return await createPostWithGalleryIdFallback({ title, content, galleryId })
+    }
+  }
+  return await createPostWithGalleryIdFallback({ title, content, galleryId })
 }
 
 function stripHtml(html) {
@@ -127,7 +165,11 @@ export function GallMinorBoardWritePage() {
   const [searchParams] = useSearchParams()
   const { viewer, isAuthed } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
-  const boardBase = loc.pathname.includes('/gall/mini/') ? 'mini' : 'mgallery'
+  const boardBase = loc.pathname.includes('/gall/mini/')
+    ? 'mini'
+    : loc.pathname.includes('/gall/p/') || loc.pathname.includes('/gall/person/')
+      ? 'p'
+      : 'mgallery'
   const { data, loading: isGalleryLoading } = useQuery(GALLERY_DETAIL_QUERY, {
     variables: { galleryId },
     fetchPolicy: 'network-only',
@@ -177,11 +219,7 @@ export function GallMinorBoardWritePage() {
     }
     setIsSubmitting(true)
     try {
-      await createMinorPostWithGalleryId({
-        title: trimmedTitle,
-        content: trimmedContent,
-        galleryId: String(galleryId),
-      })
+      await createGalleryPost({ boardBase, title: trimmedTitle, content: trimmedContent, galleryId: String(galleryId) })
       window.alert('게시글이 등록되었습니다.')
       navigate(listHref)
     } catch (err) {

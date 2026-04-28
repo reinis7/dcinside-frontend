@@ -64,6 +64,57 @@ function stripHtml(html) {
   return normalizeDashes(decodeHtmlEntities(plain))
 }
 
+const PERSON_THUMBNAIL_URL = 'https://nstatic.dcinside.com/dc/w/images/minorbg.png'
+
+// Manual layout rows (edit columnCount freely).
+// Default row "total column count" is 6 (rows should sum to 6).
+const PERSON_TOPIC_LAYOUT_ROWS = [
+  [
+    { topicName: '연예인', columnCount: 2 },
+    { topicName: '유튜버/스트리머', columnCount: 2 },
+    { topicName: '인플루언서', columnCount: 1 },
+    { topicName: '화제인물', columnCount: 1 },
+  ],
+  [
+    { topicName: '스포츠스타', columnCount: 2 },
+    { topicName: '정치인', columnCount: 1 },
+    { topicName: '문화/예술', columnCount: 1 },
+    { topicName: '방송/언론', columnCount: 1 },
+    { topicName: '디지털/IT', columnCount: 1 },
+  ],
+  [
+    { topicName: '금융', columnCount: 1 },
+    { topicName: '경영', columnCount: 1 },
+    { topicName: '역사인물', columnCount: 1 },
+    { topicName: '가상인물', columnCount: 1 },
+    { topicName: '사무', columnCount: 1 },
+    { topicName: '서비스', columnCount: 1 },
+  ],
+  [
+    { topicName: '마케팅', columnCount: 1 },
+    { topicName: '디자인', columnCount: 1 },
+    { topicName: '의료', columnCount: 1 },
+    { topicName: '법률', columnCount: 1 },
+    { topicName: '교육', columnCount: 1 },
+    { topicName: '종교', columnCount: 1 },
+  ],
+  [
+    { topicName: '관광/여행', columnCount: 1 },
+    { topicName: '교통/운송', columnCount: 1 },
+    { topicName: '유통/무역', columnCount: 1 },
+    { topicName: '생산/관리', columnCount: 1 },
+    { topicName: '연구/설계', columnCount: 1 },
+    { topicName: '판매/영업', columnCount: 1 },
+  ],
+  [
+    { topicName: '농업/어업', columnCount: 1 },
+    { topicName: '자영업', columnCount: 1 },
+    { topicName: '공무원', columnCount: 1 },
+    { topicName: '학생', columnCount: 1 },
+    { topicName: '기타', columnCount: 2 },
+  ],
+]
+
 function toColumns(list, columnCount = 2) {
   const cols = Array.from({ length: columnCount }, () => [])
   ;(list ?? []).forEach((item, idx) => {
@@ -144,26 +195,29 @@ export function GallPersonIndexPage() {
 
   const topicPanels = useMemo(() => {
     const nodes = data?.dcinsideGalleryTopicTree ?? []
-    const children = nodes.flatMap((n) => n?.child ?? [])
-    const byName = new Map()
-    for (const c of children) {
-      const nm = stripHtml(c?.name) || ''
+    const byParentName = new Map()
+    for (const n of nodes) {
+      const nm = stripHtml(n?.name) || ''
       if (!nm) continue
-      if (!byName.has(nm)) byName.set(nm, c)
+      if (!byParentName.has(nm)) byParentName.set(nm, n)
     }
 
     const panels = PARENT_TOPICS.map((topicName) => {
-      const node = byName.get(topicName) || null
-      const galleries = (node?.galleries ?? []).slice(0, 6)
+      const parent = byParentName.get(topicName) || null
+      const allNode = parent?.child?.[0] ?? null
+      const allGalleries = allNode?.galleries ?? []
+      const galleries = allGalleries.slice(0, 6)
       return {
         key: topicName,
         title: topicName,
-        count: node?.galleries?.length ?? 0,
+        count: allGalleries.length,
         galleries,
       }
     })
     return panels
   }, [data, PARENT_TOPICS])
+
+  const topicPanelMap = useMemo(() => new Map(topicPanels.map((p) => [p.key, p])), [topicPanels])
 
   return (
     <section className="grid grid-cols-2 gap-3">
@@ -321,46 +375,66 @@ export function GallPersonIndexPage() {
       </div>
 
       <div className="col-span-2 border border-[#d3d3d3] bg-white">
-        <div className="grid grid-cols-4 border-t border-[#d9d9d9]">
-          {topicPanels.map((panel) => (
-            <div key={panel.key} className="border-r border-b border-[#d9d9d9] last:border-r-0">
-              <div className="flex items-center justify-between border-b border-[#d9d9d9] bg-[#f6f6f6] px-2 py-1 text-[12px] font-bold text-[#333]">
-                <span className="truncate">
-                  {panel.title} <span className="font-semibold text-[#666]">({panel.count})</span>
-                </span>
-                <button type="button" className="h-[16px] w-[16px] border border-[#cfcfcf] bg-white text-[10px] text-[#333]">
-                  ▾
-                </button>
-              </div>
-              <div className="px-2 py-2">
-                <div className="grid gap-2">
-                  {panel.galleries.length > 0 ? (
-                    panel.galleries.map((g) => {
-                      const slug = g?.slug || ''
-                      const title = stripHtml(g?.title) || slug || '인물 갤러리'
-                      return (
-                        <Link
-                          key={slug || title}
-                          to={slug ? `/gall/p/board/lists/?id=${encodeURIComponent(slug)}` : '#'}
-                          className="block truncate text-[12px] text-[#333] hover:underline"
-                          title={stripHtml(g?.description) || title}
-                        >
-                          {title}
-                        </Link>
-                      )
-                    })
-                  ) : (
-                    <div className="py-6 text-center text-[12px] text-[#888]">
-                      <div className="font-bold text-[#5a5f7a]">NEW</div>
-                      <div className="mt-2">최근 개설된</div>
-                      <div>인물 갤러리가 없습니다.</div>
+        {PERSON_TOPIC_LAYOUT_ROWS.map((row, rowIdx) => (
+          <div
+            key={`person-topic-row-${rowIdx}`}
+            className={rowIdx === 0 ? 'grid border-t border-[#d9d9d9]' : 'grid border-t border-[#d9d9d9]'}
+            style={{ gridTemplateColumns: row.map((p) => `${Math.max(1, Number(p.columnCount) || 1)}fr`).join(' ') }}
+          >
+            {row.map((layout, idx) => {
+              const panel =
+                topicPanelMap.get(layout.topicName) ?? { key: layout.topicName, title: layout.topicName, count: 0, galleries: [] }
+              return (
+                <div key={panel.key} className={idx === 0 ? 'border-b border-[#d9d9d9]' : 'border-l border-b border-[#d9d9d9]'}>
+                  <div className="flex items-center justify-between border-b border-[#d9d9d9] bg-[#f6f6f6] px-2 py-1 text-[12px] font-bold text-[#333]">
+                    <span className="truncate">
+                      {panel.title} <span className="font-semibold text-[#666]">({panel.count})</span>
+                    </span>
+                    <button type="button" className="h-[16px] w-[16px] border border-[#cfcfcf] bg-white text-[10px] text-[#333]">
+                      ▾
+                    </button>
+                  </div>
+                  <div className="px-2 py-2">
+                    <div className="grid gap-2">
+                      {panel.galleries.length > 0 ? (
+                        panel.galleries.map((g) => {
+                          const slug = g?.slug || ''
+                          const title = stripHtml(g?.title) || slug || '인물 갤러리'
+                          const desc = stripHtml(g?.description) || ''
+                          return (
+                            <Link
+                              key={slug || title}
+                              to={slug ? `/gall/p/board/lists/?id=${encodeURIComponent(slug)}` : '#'}
+                              className="group flex items-center gap-2"
+                              title={desc ? `${title} - ${desc}` : title}
+                            >
+                              <img
+                                src={PERSON_THUMBNAIL_URL}
+                                alt=""
+                                className="h-[40px] w-[40px] shrink-0 rounded-sm border border-[#e5e5e5] bg-white object-cover"
+                                loading="lazy"
+                              />
+                              <div className="min-w-0">
+                                <div className="truncate text-[12px] font-semibold text-[#333] group-hover:underline">{title}</div>
+                                {desc ? <div className="truncate text-[11px] text-[#777]">{desc}</div> : null}
+                              </div>
+                            </Link>
+                          )
+                        })
+                      ) : (
+                        <div className="py-6 text-center text-[12px] text-[#888]">
+                          <div className="font-bold text-[#5a5f7a]">NEW</div>
+                          <div className="mt-2">최근 개설된</div>
+                          <div>인물 갤러리가 없습니다.</div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        ))}
       </div>
     </section>
   )

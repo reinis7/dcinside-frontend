@@ -138,7 +138,7 @@ export function Header() {
             </Link>
             <Link
               to="/gall/p"
-              className={/^\/gall\/p(\/|$)/.test(location.pathname) ? 'text-[#ffd15c]' : 'hover:underline'}
+              className={/^\/gall\/p(\/|$)/.test(location.pathname) || /^\/gall\/person(\/|$)/.test(location.pathname) ? 'text-[#ffd15c]' : 'hover:underline'}
             >
               인물갤
             </Link>

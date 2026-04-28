@@ -39,6 +39,26 @@ function RedirectNgalleryToMiniView() {
   return <Navigate to={`/gall/mini/board/view${loc.search}`} replace />
 }
 
+function RedirectPersonToP() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/p${loc.search}`} replace />
+}
+
+function RedirectPersonToPLists() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/p/board/lists${loc.search}`} replace />
+}
+
+function RedirectPersonToPWrite() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/p/board/write${loc.search}`} replace />
+}
+
+function RedirectPersonToPView() {
+  const loc = useLocation()
+  return <Navigate to={`/gall/p/board/view${loc.search}`} replace />
+}
+
 export function GallRoutes() {
   return (
     <GallLayout>
@@ -51,6 +71,13 @@ export function GallRoutes() {
         <Route path="n/create" element={<RequireAuth cancelTo="/gall/n"><GallCreateStubPage /></RequireAuth>} />
         <Route path="p" element={<GallPersonIndexPage />} />
         <Route path="p/create" element={<RequireAuth cancelTo="/gall/p"><GallCreateStubPage /></RequireAuth>} />
+        <Route path="p/board/lists" element={<GallMinorBoardListPage />} />
+        <Route path="p/board/write" element={<GallMinorBoardWritePage />} />
+        <Route path="p/board/view" element={<GallBoardViewPage />} />
+        <Route path="person" element={<RedirectPersonToP />} />
+        <Route path="person/board/lists" element={<RedirectPersonToPLists />} />
+        <Route path="person/board/write" element={<RedirectPersonToPWrite />} />
+        <Route path="person/board/view" element={<RedirectPersonToPView />} />
         <Route path="mgallery/board/lists" element={<GallMinorBoardListPage />} />
         <Route path="mgallery/board/write" element={<GallMinorBoardWritePage />} />
         <Route path="mgallery/board/view" element={<GallBoardViewPage />} />
