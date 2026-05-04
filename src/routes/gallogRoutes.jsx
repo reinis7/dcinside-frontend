@@ -12,13 +12,19 @@ function RedirectGallogPostingToMain() {
   return <Navigate to={`/gallog/${encodeURIComponent(userId)}/posting/all`} replace />
 }
 
+function RedirectGallogCommentToAll() {
+  const { userId = '' } = useParams()
+  return <Navigate to={`/gallog/${encodeURIComponent(userId)}/comment/all`} replace />
+}
+
 export function GallogRoutes() {
   return (
     <Routes>
       <Route path=":userId" element={<RedirectGallogUserToPosting />} />
       <Route path=":userId/posting" element={<RedirectGallogPostingToMain />} />
       <Route path=":userId/posting/:galleryType" element={<GallogPostingPage />} />
-      <Route path=":userId/comment" element={<GallogSimpleSectionPage sectionKey="comment" />} />
+      <Route path=":userId/comment" element={<RedirectGallogCommentToAll />} />
+      <Route path=":userId/comment/:galleryType" element={<GallogSimpleSectionPage sectionKey="comment" />} />
       <Route path=":userId/scrap" element={<GallogSimpleSectionPage sectionKey="scrap" />} />
       <Route path=":userId/guestbook" element={<GallogSimpleSectionPage sectionKey="guestbook" />} />
       <Route path="*" element={<Navigate to="/www" replace />} />

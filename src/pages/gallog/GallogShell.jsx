@@ -19,7 +19,7 @@ export function GallogShell({ targetUserId, activeMenu, children }) {
   const menuPath = {
     home: `/gallog/${encodedUserId}`,
     posting: `/gallog/${encodedUserId}/posting/all`,
-    comment: `/gallog/${encodedUserId}/comment`,
+    comment: `/gallog/${encodedUserId}/comment/all`,
     scrap: `/gallog/${encodedUserId}/scrap`,
     guestbook: `/gallog/${encodedUserId}/guestbook`,
   }

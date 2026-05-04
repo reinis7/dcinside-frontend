@@ -1,7 +1,16 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 
 const SUB_HEADERS = ['최근 방문', '실시간 베스트', '싱글벙글 지구촌', '힛갤', '위뉴스', '개정줌']
+const USER_DROPDOWN_ITEMS = [
+  { key: 'my-gallog', label: 'MY갤로그', toType: 'gallog' },
+  { key: 'fixed-nick', label: '고정닉정보' },
+  { key: 'favorites', label: '즐겨찾기' },
+  { key: 'manage-join', label: '운영/가입' },
+  { key: 'scrap', label: '스크랩' },
+  { key: 'alarm-list', label: '알림 리스트' },
+]
 
 export function Header() {
   const location = useLocation()
@@ -9,6 +18,25 @@ export function Header() {
   const displayName = viewer?.username || viewer?.name || '회원'
   const currentUserId = viewer?.username || viewer?.userId || null
   const myGallogHref = currentUserId ? `/gallog/${encodeURIComponent(currentUserId)}/posting/all` : '/gallog'
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const userMenuRef = useRef(null)
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return
+    const handleOutside = (event) => {
+      if (!userMenuRef.current) return
+      if (!userMenuRef.current.contains(event.target)) setIsUserMenuOpen(false)
+    }
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') setIsUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleEsc)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [isUserMenuOpen])
 
   return (
     <header className="border-b border-[#d3d3d3] bg-white">
@@ -89,9 +117,41 @@ export function Header() {
               </div>
 
               <div className="flex items-center gap-2 text-[12px]">
-                <Link to={myGallogHref} className="font-semibold text-[#333] hover:underline">
-                  {displayName}
-                </Link>
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                    className="inline-flex items-center gap-1 font-semibold text-[#333] hover:underline"
+                  >
+                    {displayName}
+                    <span className="text-[10px]">▼</span>
+                  </button>
+                  {isUserMenuOpen ? (
+                    <div className="absolute right-0 z-20 mt-1 min-w-[120px] border border-[#cfcfcf] bg-white py-1 text-[12px] shadow-sm">
+                      {USER_DROPDOWN_ITEMS.map((item) =>
+                        item.toType === 'gallog' ? (
+                          <Link
+                            key={item.key}
+                            to={myGallogHref}
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="block px-3 py-1.5 text-[#333] hover:bg-[#f5f7fb]"
+                          >
+                            {item.label}
+                          </Link>
+                        ) : (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="block w-full px-3 py-1.5 text-left text-[#333] hover:bg-[#f5f7fb]"
+                          >
+                            {item.label}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  ) : null}
+                </div>
                 <button
                   type="button"
                   onClick={logout}
