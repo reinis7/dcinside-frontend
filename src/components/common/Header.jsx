@@ -7,6 +7,8 @@ export function Header() {
   const location = useLocation()
   const { isAuthed, viewer, logout } = useAuth()
   const displayName = viewer?.username || viewer?.name || '회원'
+  const currentUserId = viewer?.username || viewer?.userId || null
+  const myGallogHref = currentUserId ? `/gallog/${encodeURIComponent(currentUserId)}/posting/all` : '/gallog'
 
   return (
     <header className="border-b border-[#d3d3d3] bg-white">
@@ -64,9 +66,9 @@ export function Header() {
                   </span>
                 ))}
                 <span className="inline-flex items-center">
-                  <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+                  <Link to={myGallogHref} className="hover:underline">
                     갤로그
-                  </a>
+                  </Link>
                   <span className="ml-2 text-[#cfcfcf]">|</span>
                 </span>
                 <span className="inline-flex items-center">
@@ -87,7 +89,9 @@ export function Header() {
               </div>
 
               <div className="flex items-center gap-2 text-[12px]">
-                <span className="font-semibold text-[#333]">{displayName}</span>
+                <Link to={myGallogHref} className="font-semibold text-[#333] hover:underline">
+                  {displayName}
+                </Link>
                 <button
                   type="button"
                   onClick={logout}
@@ -142,9 +146,9 @@ export function Header() {
             >
               인물갤
             </Link>
-            <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
+            <Link to={myGallogHref} className="hover:underline">
               갤로그
-            </a>           
+            </Link>
           </nav>
           <button
             type="button"

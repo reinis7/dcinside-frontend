@@ -14,6 +14,8 @@ export function LoginBox() {
     if (n) return n
     return '회원'
   }, [viewer?.name, viewer?.username])
+  const currentUserId = viewer?.username?.trim() || viewer?.userId?.trim() || ''
+  const myGallogPath = currentUserId ? `/gallog/${encodeURIComponent(currentUserId)}/posting/all` : '/gallog'
 
   const [form, setForm] = useState({
     userId: '',
@@ -84,7 +86,7 @@ export function LoginBox() {
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => navigate('/www/my')}
+              onClick={() => navigate(myGallogPath)}
             >
               MY갤로그
             </button>
