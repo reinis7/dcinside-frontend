@@ -117,7 +117,7 @@ export function LoginBox() {
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
+              onClick={() => toast.info('준비중')}
             >
               스크랩
             </button>

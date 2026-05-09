@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuth } from '../../auth/authContext'
 import { UserManageJoinModal } from './UserManageJoinModal'
 import { UserNotificationsModal } from './UserNotificationsModal'
@@ -10,7 +11,7 @@ const USER_DROPDOWN_ITEMS = [
   { key: 'fixed-nick', label: '고정닉정보', to: '/sign/myinfo/modify' },
   { key: 'favorites', label: '즐겨찾기' },
   { key: 'manage-join', label: '운영/가입', modal: 'manage-join' },
-  { key: 'scrap', label: '스크랩' },
+  { key: 'scrap', label: '스크랩', comingSoon: true },
   { key: 'alarm-list', label: '알림 리스트', modal: 'notifications' },
 ]
 
@@ -195,6 +196,18 @@ export function Header() {
                             onClick={() => {
                               setIsUserMenuOpen(false)
                               setHeaderModal(item.modal)
+                            }}
+                            className="block w-full px-3 py-1.5 text-left text-[#333] hover:bg-[#f5f7fb]"
+                          >
+                            {item.label}
+                          </button>
+                        ) : item.comingSoon ? (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false)
+                              toast.info('준비중')
                             }}
                             className="block w-full px-3 py-1.5 text-left text-[#333] hover:bg-[#f5f7fb]"
                           >

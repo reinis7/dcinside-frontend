@@ -6,6 +6,12 @@ import { Link, useParams } from 'react-router-dom'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { useAuth } from '../../auth/authContext'
 import { GallogShell } from './GallogShell'
+import {
+  buildDcinsideGalleryListHref,
+  buildDcinsidePostViewHref,
+  galleryTypeShortLabel,
+  normalizeDcinsideGalleryType,
+} from '../../utils/dcinsideGalleryLinks'
 
 const GALLOG_POSTS_QUERY = gql`
   query GallogUserPosts($first: Int = 100, $authorName: String!) {
@@ -34,53 +40,6 @@ function pickPostTitle(node) {
   if (typeof t === 'string') return t
   if (t && typeof t === 'object' && typeof t.rendered === 'string') return t.rendered
   return ''
-}
-
-function normalizeDcinsideGalleryType(raw) {
-  const s = String(raw ?? '').trim().toUpperCase()
-  if (!s) return 'MAIN'
-  if (s === '메인' || s === 'MAIN') return 'MAIN'
-  if (s === '마이너' || s === 'MINOR') return 'MINOR'
-  if (s === '미니' || s === 'MINI') return 'MINI'
-  if (s === '인물' || s === 'PERSON') return 'PERSON'
-  if (s.includes('인물') || s.includes('PERSON')) return 'PERSON'
-  if (s.includes('미니') || s.includes('MINI')) return 'MINI'
-  if (s.includes('마이너') || s.includes('MINOR')) return 'MINOR'
-  return 'MAIN'
-}
-
-function galleryTypeShortLabel(typeRaw) {
-  const t = normalizeDcinsideGalleryType(typeRaw)
-  if (t === 'MAIN') return '메인'
-  if (t === 'MINOR') return '마이너'
-  if (t === 'MINI') return '미니'
-  if (t === 'PERSON') return '인물'
-  return t || ''
-}
-
-function boardBasePrefixForGalleryType(typeRaw) {
-  const t = normalizeDcinsideGalleryType(typeRaw)
-  if (t === 'MAIN') return '/gall/board'
-  if (t === 'MINOR') return '/gall/mgallery/board'
-  if (t === 'MINI') return '/gall/mini/board'
-  if (t === 'PERSON') return '/gall/p/board'
-  return '/gall/board'
-}
-
-function buildDcinsidePostViewHref({ galleryType, galleryId, postDatabaseId }) {
-  if (galleryId == null || String(galleryId).trim() === '') return null
-  if (postDatabaseId == null) return null
-  const base = boardBasePrefixForGalleryType(galleryType)
-  const gid = encodeURIComponent(String(galleryId).trim())
-  const no = encodeURIComponent(String(postDatabaseId))
-  return `${base}/view/?id=${gid}&no=${no}`
-}
-
-function buildDcinsideGalleryListHref({ galleryType, galleryId }) {
-  if (galleryId == null || String(galleryId).trim() === '') return null
-  const base = boardBasePrefixForGalleryType(galleryType)
-  const gid = encodeURIComponent(String(galleryId).trim())
-  return `${base}/lists/?id=${gid}`
 }
 
 function postMatchesGalleryTab(node, tabKey) {
