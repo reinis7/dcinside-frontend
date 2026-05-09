@@ -120,21 +120,38 @@ export function Header() {
                   </Link>
                   <span className="ml-2 text-[#cfcfcf]">|</span>
                 </span>
-                <span className="inline-flex items-center">
-                  <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
-                    디시게임
+                <span className="inline-flex flex-wrap items-center gap-x-2 text-[11px]">
+                  <span className="inline-flex items-center">
+                    <a
+                      href="#"
+                      title="준비중"
+                      onClick={(e) => e.preventDefault()}
+                      className="text-[#555] hover:text-[#2f3d8f] hover:underline"
+                    >
+                      디시게임
+                    </a>
+                    <span className="ml-2 text-[#cfcfcf]">|</span>
+                  </span>
+                  <span className="inline-flex items-center">
+                    <a
+                      href="#"
+                      title="준비중"
+                      onClick={(e) => e.preventDefault()}
+                      className="text-[#555] hover:text-[#2f3d8f] hover:underline"
+                    >
+                      이벤트
+                    </a>
+                    <span className="ml-2 text-[#cfcfcf]">|</span>
+                  </span>
+                  <a
+                    href="#"
+                    title="준비중"
+                    onClick={(e) => e.preventDefault()}
+                    className="text-[#555] hover:text-[#2f3d8f] hover:underline"
+                  >
+                    디시트렌드
                   </a>
-                  <span className="ml-2 text-[#cfcfcf]">|</span>
                 </span>
-                <span className="inline-flex items-center">
-                  <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
-                    이벤트
-                  </a>
-                  <span className="ml-2 text-[#cfcfcf]">|</span>
-                </span>
-                <a href="#" className="hover:underline" onClick={(e) => e.preventDefault()}>
-                  디시트렌드
-                </a>
               </div>
 
               <div className="flex items-center gap-2 text-[12px]">

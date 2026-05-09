@@ -310,10 +310,22 @@ export function GallMinorBoardListPage() {
             <button type="button" className="rounded-sm border border-[#2f3d8f] bg-[#3b4890] px-3 py-1 font-bold text-white">
               전체글
             </button>
-            <button type="button" className="rounded-sm border border-[#cfd4dd] bg-white px-3 py-1 font-semibold text-[#444]">
+            <button
+              type="button"
+              disabled
+              title="준비 중"
+              aria-disabled="true"
+              className="cursor-not-allowed rounded-sm border border-[#e8e8e8] bg-[#f4f4f4] px-3 py-1 font-semibold text-[#aaa]"
+            >
               개념글
             </button>
-            <button type="button" className="rounded-sm border border-[#cfd4dd] bg-white px-3 py-1 font-semibold text-[#444]">
+            <button
+              type="button"
+              disabled
+              title="준비 중"
+              aria-disabled="true"
+              className="cursor-not-allowed rounded-sm border border-[#e8e8e8] bg-[#f4f4f4] px-3 py-1 font-semibold text-[#aaa]"
+            >
               공지
             </button>
             <span className="ml-3 text-[#333]">{galleryPostName}</span>
