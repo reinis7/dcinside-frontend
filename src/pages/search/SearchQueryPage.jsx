@@ -53,13 +53,89 @@ const SEARCH_POSTS_RELEVANCE_QUERY = gql`
   ${SEARCH_POST_FIELDS_FRAGMENT}
 `
 
-const SEARCH_GALLERY_POOL_QUERY = gql`
-  query SearchGalleryPool($limit: Int!) {
-    dcinsideTopGalleriesByType(galleryTypes: ["메인"], limit: $limit) {
+/**
+ * 갤 검색은 「갤 이름(제목)」과 「갤 ID(slug/post_name·DB id)」에만 매칭합니다.
+ * dcinsideGalleryByGalleryId는 제목 검색 시 GraphQL 에러(Gallery not found)를 내면
+ * 같은 문서의 contentNodes까지 클라이언트에서 망가질 수 있어 단건 조회는 별도 요청(errorPolicy: ignore)으로 둡니다.
+ * - SearchGalleryContentNodes: contentNodes만 (한 번의 요청)
+ * - SearchGalleryLookupById: 갤 ID 정확 조회 (실패 시 무시)
+ * - 게시물 검색(SearchPosts*) 노드에서 dcinsideGalleryId 병합
+ */
+export const SEARCH_GALLERIES_PROMPT_QUERY = `
+query SearchGalleryContentNodes($keyword: String!, $first: Int = 60) {
+  galleryContentNodes: contentNodes(
+    first: $first
+    where: { search: $keyword, orderby: { field: MODIFIED, order: DESC } }
+  ) {
+    nodes {
+      __typename
+      ... on Gallery {
+        databaseId
+        slug
+        title
+      }
+      ... on NodeWithTitle {
+        title
+      }
+      ... on DatabaseIdentifier {
+        databaseId
+      }
+      ... on ContentNode {
+        slug
+      }
+    }
+  }
+}
+
+query SearchGalleryLookupById($galleryId: String!) {
+  dcinsideGalleryByGalleryId(galleryId: $galleryId) {
+    galleryId
+    databaseId
+    postName
+    title
+    score
+  }
+}
+
+# 게시물 검색과 변수 공유 → dcinsideGalleryId 병합
+# query SearchPosts($keyword: String!, $first: Int = 25) { posts(where: { search: $keyword }) { nodes { dcinsideGalleryId dcinsideGalleryType } } }
+`
+
+const SEARCH_GALLERY_LOOKUP_BY_ID_QUERY = gql`
+  query SearchGalleryLookupById($galleryId: String!) {
+    dcinsideGalleryByGalleryId(galleryId: $galleryId) {
+      galleryId
       databaseId
-      slug
+      postName
       title
       score
+    }
+  }
+`
+
+const SEARCH_GALLERIES_MERGED_QUERY = gql`
+  query SearchGalleryContentNodes($keyword: String!, $first: Int = 60) {
+    galleryContentNodes: contentNodes(
+      first: $first
+      where: { search: $keyword, orderby: { field: MODIFIED, order: DESC } }
+    ) {
+      nodes {
+        __typename
+        ... on Gallery {
+          databaseId
+          slug
+          title
+        }
+        ... on NodeWithTitle {
+          title
+        }
+        ... on DatabaseIdentifier {
+          databaseId
+        }
+        ... on ContentNode {
+          slug
+        }
+      }
     }
   }
 `
@@ -82,6 +158,42 @@ function normalizeKeyword(raw) {
   return String(raw ?? '')
     .trim()
     .replace(/\s+/g, ' ')
+}
+
+function normalizeKeywordForMatch(raw) {
+  try {
+    return String(raw ?? '')
+      .normalize('NFC')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase()
+  } catch {
+    return String(raw ?? '')
+      .trim()
+      .toLowerCase()
+  }
+}
+
+function nfLower(s) {
+  try {
+    return String(s ?? '')
+      .normalize('NFC')
+      .toLowerCase()
+  } catch {
+    return String(s ?? '').toLowerCase()
+  }
+}
+
+/** 갤 검색 보조(contentNodes): 제목(이름)·slug/post_name·DB id 문자열만 매칭 (본문·설명 등 제외) */
+function galleryMatchesNameOrId(poolRow, keywordLower) {
+  const title = nfLower(stripHtml(poolRow?.title || ''))
+  const slug = nfLower(String(poolRow?.slug ?? '').trim())
+  const db = nfLower(String(poolRow?.databaseId ?? '').trim())
+  return (
+    title.includes(keywordLower) ||
+    slug.includes(keywordLower) ||
+    (db.length > 0 && keywordLower.length > 0 && db.includes(keywordLower))
+  )
 }
 
 function formatPostDate(iso) {
@@ -136,6 +248,140 @@ function buildDcinsideGalleryListHref({ galleryType, galleryId }) {
   return `${base}/lists/?id=${gid}`
 }
 
+/** slug 기준 중복 제거 */
+function dedupeGalleryMerge(primary, secondary) {
+  const seen = new Set()
+  const out = []
+  for (const g of [...primary, ...secondary]) {
+    const id = String(g.slug ?? g.databaseId ?? '').trim()
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    out.push(g)
+  }
+  return out
+}
+
+function normalizeBackendGalleryTypeEnum(raw) {
+  const s = String(raw ?? '').trim().toUpperCase()
+  if (!s) return 'MAIN'
+  if (s === '메인' || s === 'MAIN') return 'MAIN'
+  if (s === '마이너' || s === 'MINOR') return 'MINOR'
+  if (s === '미니' || s === 'MINI') return 'MINI'
+  if (s === '인물' || s === 'PERSON') return 'PERSON'
+  if (s.includes('인물') || s.includes('PERSON')) return 'PERSON'
+  if (s.includes('미니') || s.includes('MINI')) return 'MINI'
+  if (s.includes('마이너') || s.includes('MINOR')) return 'MINOR'
+  return 'MAIN'
+}
+
+/** dcinsideGalleryByGalleryId 단건 조회 → 검색 풀 행 (스키마에 galleryType 없으면 메인으로 간주) */
+function mapDcinsideGalleryLookupToPool(row) {
+  if (!row) return null
+  const slug = String(row.galleryId ?? row.postName ?? '').trim()
+  const id = slug || String(row.databaseId ?? '').trim()
+  if (!id) return null
+  return {
+    databaseId: row.databaseId,
+    slug: id,
+    title: row.title,
+    description: '',
+    galleryTypeEnum: normalizeBackendGalleryTypeEnum(row.galleryType ?? row.galleryTypeName),
+    score: row.score,
+    _source: 'dcinsideGalleryByGalleryId',
+  }
+}
+
+/**
+ * contentNodes 검색 결과 중 갤 후보로 남길 노드.
+ * WPGraphQL에서 갤 CPT가 GraphQL 타입 Post로만 노출되는 경우가 많아 Post는 제외하지 않는다.
+ * (일반 글 노이즈는 galleryHitsMerged 단계의 galleryMatchesNameOrId로 줄인다.)
+ * Page·MediaItem만 제외한다.
+ */
+function isLikelyGalleryContentNode(node) {
+  if (!node) return false
+  const t = node?.__typename || ''
+  if (t === 'Page' || t === 'MediaItem') return false
+  if (/gallery/i.test(t)) return true
+  if (/dcinside/i.test(t)) return true
+  if (t === 'Post') return true
+  if (t.length > 0) return true
+  const slug = String(node.slug ?? '').trim()
+  const db = node.databaseId != null ? String(node.databaseId).trim() : ''
+  const title = pickTitleFromNode(node).trim()
+  return Boolean(slug || db || title)
+}
+
+function pickTitleFromNode(node) {
+  const raw = node?.title
+  if (typeof raw === 'string') return raw
+  if (raw && typeof raw === 'object' && typeof raw.rendered === 'string') return raw.rendered
+  return ''
+}
+
+function mapContentNodeToPool(node) {
+  if (!node || !isLikelyGalleryContentNode(node)) return null
+  const slug = String(node.slug ?? '').trim()
+  const title = pickTitleFromNode(node)
+  const id = slug || String(node.databaseId ?? '').trim()
+  if (!id) return null
+  const typename = node.__typename || ''
+  let galleryTypeEnum = 'MAIN'
+  if (/인물|person|people/i.test(typename)) galleryTypeEnum = 'PERSON'
+  else if (/미니|mini/i.test(typename)) galleryTypeEnum = 'MINI'
+  else if (/마이너|minor/i.test(typename)) galleryTypeEnum = 'MINOR'
+  return {
+    databaseId: node.databaseId,
+    slug: id,
+    title,
+    description: '',
+    galleryTypeEnum,
+    score: undefined,
+    _source: 'contentNodes',
+    __typename: typename,
+  }
+}
+
+/** posts 검색 결과에서 갤 메타만 뽑기 — 갤 ID 문자열이 검색어와 이름·ID 규칙으로 맞을 때만 */
+function mapPostsSearchToGalleryRows(nodes, keywordRaw) {
+  const kw = normalizeKeywordForMatch(keywordRaw)
+  const seen = new Set()
+  const rows = []
+  for (const node of nodes ?? []) {
+    const gid = node?.dcinsideGalleryId != null ? String(node.dcinsideGalleryId).trim() : ''
+    if (!gid || seen.has(gid)) continue
+    const galleryType =
+      node?.dcinsideGalleryType != null ? String(node.dcinsideGalleryType).trim() : ''
+    const row = {
+      databaseId: undefined,
+      slug: gid,
+      title: gid,
+      description: '',
+      galleryTypeEnum: normalizeBackendGalleryTypeEnum(galleryType),
+      score: undefined,
+      _source: 'postsSearch',
+    }
+    if (!galleryMatchesNameOrId(row, kw)) continue
+    seen.add(gid)
+    rows.push(row)
+  }
+  return rows
+}
+
+/** contentNodes 전용 응답만 매핑 (단건 조회는 별도 쿼리) */
+function galleryHitsFromContentNodesSearch(data, keywordRaw) {
+  const kw = normalizeKeywordForMatch(keywordRaw)
+  const rows = []
+  for (const node of data?.galleryContentNodes?.nodes ?? []) {
+    const m = mapContentNodeToPool(node)
+    if (!m) continue
+    // 서버 search가 돌려준 Gallery 타입은 이미 검색어 매칭으로 들어온 것으로 간주(유니코드·클라 필터 불일치 방지)
+    const isRootGalleryTypename =
+      typeof node?.__typename === 'string' && /^gallery$/i.test(String(node.__typename))
+    if (isRootGalleryTypename || galleryMatchesNameOrId(m, kw)) rows.push(m)
+  }
+  return dedupeGalleryMerge(rows, [])
+}
+
 const TABS = [
   { id: 'integrated', label: '통합' },
   { id: 'gallery', label: '갤러리' },
@@ -157,9 +403,19 @@ export function SearchQueryPage() {
     setDraft(keywordParam)
   }, [keywordParam])
 
-  const galleryPoolQuery = useQuery(SEARCH_GALLERY_POOL_QUERY, {
-    variables: { limit: 160 },
-    fetchPolicy: 'cache-first',
+  const galleryLookupQuery = useQuery(SEARCH_GALLERY_LOOKUP_BY_ID_QUERY, {
+    skip: !hasKeyword,
+    variables: { galleryId: keywordParam },
+    fetchPolicy: 'network-only',
+    errorPolicy: 'ignore',
+  })
+
+  const galleryMergedSearchQuery = useQuery(SEARCH_GALLERIES_MERGED_QUERY, {
+    skip: !hasKeyword,
+    variables: { keyword: keywordParam, first: 60 },
+    /** 인메모리 캐시에 남은 불완전 Gallery 객체와 병합되면 slug/title이 빠져 행이 버려지는 경우 방지 */
+    fetchPolicy: 'no-cache',
+    errorPolicy: 'all',
   })
 
   const postsQueryDate = useQuery(SEARCH_POSTS_QUERY, {
@@ -176,22 +432,55 @@ export function SearchQueryPage() {
 
   const postsQuery = postSort === 'latest' ? postsQueryDate : postsQueryRel
 
+  const galleryHits = useMemo(() => {
+    const lookupPrimary = []
+    const lookupHit = mapDcinsideGalleryLookupToPool(galleryLookupQuery.data?.dcinsideGalleryByGalleryId)
+    if (lookupHit) lookupPrimary.push(lookupHit)
+
+    const fromNodes = galleryHitsFromContentNodesSearch(galleryMergedSearchQuery.data, keywordParam)
+    const mergedLookupNodes = dedupeGalleryMerge(lookupPrimary, fromNodes)
+
+    const fromPosts = mapPostsSearchToGalleryRows(postsQuery.data?.posts?.nodes, keywordParam)
+    return dedupeGalleryMerge(mergedLookupNodes, fromPosts)
+  }, [
+    galleryLookupQuery.data,
+    galleryMergedSearchQuery.data,
+    postsQuery.data,
+    keywordParam,
+  ])
+
+  /** 게시물 검색은 갤 섹션 표시를 막지 않음 — contentNodes·단건 조회만 기다린다 (posts는 나중에 병합) */
+  const gallerySearchLoading =
+    galleryLookupQuery.loading || galleryMergedSearchQuery.loading
+
+  const gallerySearchAnyError = galleryMergedSearchQuery.error || postsQuery.error
+
   const matchedGalleries = useMemo(() => {
     if (!hasKeyword) return []
-    const pool = galleryPoolQuery.data?.dcinsideTopGalleriesByType ?? []
-    const lower = keywordParam.toLowerCase()
-    return pool
-      .filter((g) => stripHtml(g?.title || '').toLowerCase().includes(lower))
-      .slice(0, 25)
-      .map((g, idx) => {
-        const id = g.slug || String(g.databaseId || '')
-        const title = stripHtml(g.title) || id || '갤러리'
-        const seed = Number(g.databaseId ?? idx + 1)
-        const fakeNew = (seed % 5) + 1
-        const fakeTotal = ((seed * 97) % 50_000) + 100
-        return { id, title, score: g.score, fakeNew, fakeTotal }
+    return galleryHits.slice(0, 60).map((g, idx) => {
+      const id = g.slug || String(g.databaseId || '')
+      const title = stripHtml(g.title) || id || '갤러리'
+      const seed = Number(g.databaseId ?? idx + 1)
+      const fakeNew = (seed % 5) + 1
+      const fakeTotal = ((seed * 97) % 50_000) + 100
+      const listHref = buildDcinsideGalleryListHref({
+        galleryType: g.galleryTypeEnum,
+        galleryId: id,
       })
-  }, [galleryPoolQuery.data, hasKeyword, keywordParam])
+      return {
+        id,
+        title,
+        score: g.score,
+        fakeNew,
+        fakeTotal,
+        galleryTypeEnum: g.galleryTypeEnum,
+        typeLabel: galleryTypeShortLabel(g.galleryTypeEnum),
+        listHref,
+      }
+    })
+  }, [galleryHits, hasKeyword])
+
+  const totalGalleryHits = galleryHits.length
 
   const postRows = useMemo(() => {
     const nodes = postsQuery.data?.posts?.nodes ?? []
@@ -229,8 +518,6 @@ export function SearchQueryPage() {
       }
     })
   }, [postsQuery.data])
-
-  const totalGalleryPool = galleryPoolQuery.data?.dcinsideTopGalleriesByType?.length ?? 0
 
   function submitSearch(nextKeyword) {
     const q = normalizeKeyword(nextKeyword)
@@ -299,14 +586,22 @@ export function SearchQueryPage() {
           ))}
         </nav>
         <div className="text-[12px] text-[#666]">
-          총 갤러리 수{' '}
-          <span className="font-semibold text-[#222]">{totalGalleryPool.toLocaleString('ko-KR')}</span>개
           {hasKeyword ? (
             <>
-              {' '}
-              · 검색 일치 <span className="font-semibold text-[#2f3d8f]">{matchedGalleries.length}</span>건
+              갤러리 검색 결과{' '}
+              <span className="font-semibold text-[#222]">{totalGalleryHits.toLocaleString('ko-KR')}</span>건
+              <span className="ml-1 text-[11px] text-[#aaa]">
+                (contentNodes + 단건 조회 + 게시물 메타)
+              </span>
+              {gallerySearchAnyError ? (
+                <span className="ml-2 text-[11px] text-[#c45c00]">(일부 요청 경고)</span>
+              ) : null}
             </>
-          ) : null}
+          ) : (
+            <span className="text-[#888]">
+              갤러리는 이름(제목) 또는 갤 ID(slug)로만 찾습니다.
+            </span>
+          )}
         </div>
       </div>
 
@@ -328,23 +623,22 @@ export function SearchQueryPage() {
               </div>
               {!hasKeyword ? (
                 <div className="px-3 py-8 text-center text-[12px] text-[#888]">검색어를 입력해 주세요.</div>
-              ) : galleryPoolQuery.loading ? (
-                <div className="px-3 py-8 text-center text-[12px] text-[#666]">갤러리 목록 불러오는 중…</div>
-              ) : matchedGalleries.length === 0 ? (
-                <div className="px-3 py-8 text-center text-[12px] text-[#888]">
-                  제목에 「{keywordParam}」이(가) 포함된 메인 갤러리가 없습니다.
-                  <div className="mt-1 text-[11px] text-[#aaa]">흥한 메인 갤 일부만 대상으로 필터합니다.</div>
-                </div>
-              ) : (
+              ) : gallerySearchLoading ? (
+                <div className="px-3 py-8 text-center text-[12px] text-[#666]">갤러리 검색 중…</div>
+              ) : matchedGalleries.length > 0 ? (
                 <ul className="divide-y divide-[#efefef] px-3 py-2 text-[12px] text-[#333]">
                   {matchedGalleries.map((g) => (
-                    <li key={g.id || g.title} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-2">
-                      <Link
-                        to={`/gall/board/lists/?id=${encodeURIComponent(g.id)}`}
-                        className="font-semibold text-[#0035ca] hover:underline"
-                      >
-                        {g.title}
-                      </Link>
+                    <li key={`${g.galleryTypeEnum}_${g.id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-2">
+                      <span className="rounded bg-[#f0f2f8] px-1.5 py-0.5 text-[10px] font-semibold text-[#555]">
+                        {g.typeLabel}
+                      </span>
+                      {g.listHref ? (
+                        <Link to={g.listHref} className="font-semibold text-[#0035ca] hover:underline">
+                          {g.title}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold text-[#0035ca]">{g.title}</span>
+                      )}
                       <span className="text-[11px] text-[#888]">
                         새글 {g.fakeNew}/{g.fakeTotal.toLocaleString('ko-KR')}
                       </span>
@@ -354,9 +648,26 @@ export function SearchQueryPage() {
                     </li>
                   ))}
                 </ul>
+              ) : (
+                <div className="px-3 py-8 text-center text-[12px] text-[#888]">
+                  {galleryMergedSearchQuery.error ? (
+                    <div className="mb-2 text-[12px] text-[#d31900]">
+                      contentNodes 갤 검색 오류: {firstGraphQLErrorMessage(galleryMergedSearchQuery.error)}
+                    </div>
+                  ) : null}
+                  {postsQuery.error ? (
+                    <div className="mb-2 text-[12px] text-[#d31900]">
+                      게시물 검색 오류(갤 메타 병합에 사용):{' '}
+                      {firstGraphQLErrorMessage(postsQuery.error)}
+                    </div>
+                  ) : null}
+                  「{keywordParam}」와 맞는 갤러리가 없습니다.
+                  <div className="mt-1 text-[11px] text-[#aaa]">
+                    단건 조회·contentNodes·게시물 검색으로 모은 뒤, 갤 이름·slug·DB 번호에 검색어가 들어가는 항목만
+                    보여 줍니다.
+                  </div>
+                </div>
               )}
-              <div className="border-t border-[#efefef] px-3 py-2 text-[12px] font-bold text-[#444]">인물 갤러리</div>
-              <div className="px-3 pb-4 text-[11px] text-[#999]">인물 갤 검색 API 연동 시 표시됩니다.</div>
             </section>
           ) : null}
 
