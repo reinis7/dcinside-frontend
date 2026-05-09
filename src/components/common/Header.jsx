@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 
 const SUB_HEADERS = ['최근 방문', '실시간 베스트', '싱글벙글 지구촌', '힛갤', '위뉴스', '개정줌']
@@ -14,12 +14,21 @@ const USER_DROPDOWN_ITEMS = [
 
 export function Header() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { isAuthed, viewer, logout } = useAuth()
   const displayName = viewer?.username || viewer?.name || '회원'
   const currentUserId = viewer?.username || viewer?.userId || null
   const myGallogHref = currentUserId ? `/gallog/${encodeURIComponent(currentUserId)}/posting/all` : '/gallog'
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef(null)
+  const headerSearchRef = useRef(null)
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/search/q')) return
+    const kw = new URLSearchParams(location.search).get('keyword') ?? ''
+    const el = headerSearchRef.current
+    if (el) el.value = kw
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     if (!isUserMenuOpen) return
@@ -49,13 +58,25 @@ export function Header() {
           />
         </Link>
 
-        <form className="flex w-[320px] items-stretch gap-0">
+        <form
+          className="flex w-[320px] items-stretch gap-0"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const q = headerSearchRef.current?.value.trim() ?? ''
+            if (!q) return
+            navigate(`/search/q?keyword=${encodeURIComponent(q)}`)
+          }}
+        >
           <input
+            ref={headerSearchRef}
             className="h-[38px] flex-1 rounded-l border border-[#2f3d8f] px-3 text-[13px] outline-none"
             placeholder="갤러리 & 통합검색"
+            defaultValue=""
+            aria-label="통합 검색어"
           />
           <button
-            type="button"
+            type="submit"
             className="h-[38px] w-[52px] rounded-r border border-[#2f3d8f] bg-[#2f3d8f] text-[13px] font-bold text-white"
             aria-label="검색"
           >
