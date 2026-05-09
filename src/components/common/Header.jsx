@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
+import { UserManageJoinModal } from './UserManageJoinModal'
+import { UserNotificationsModal } from './UserNotificationsModal'
 
 const SUB_HEADERS = ['최근 방문', '실시간 베스트', '싱글벙글 지구촌', '힛갤', '위뉴스', '개정줌']
 const USER_DROPDOWN_ITEMS = [
   { key: 'my-gallog', label: 'MY갤로그', toType: 'gallog' },
-  { key: 'fixed-nick', label: '고정닉정보' },
+  { key: 'fixed-nick', label: '고정닉정보', to: '/sign/myinfo/modify' },
   { key: 'favorites', label: '즐겨찾기' },
-  { key: 'manage-join', label: '운영/가입' },
+  { key: 'manage-join', label: '운영/가입', modal: 'manage-join' },
   { key: 'scrap', label: '스크랩' },
-  { key: 'alarm-list', label: '알림 리스트' },
+  { key: 'alarm-list', label: '알림 리스트', modal: 'notifications' },
 ]
 
 export function Header() {
@@ -20,6 +22,7 @@ export function Header() {
   const currentUserId = viewer?.username || viewer?.userId || null
   const myGallogHref = currentUserId ? `/gallog/${encodeURIComponent(currentUserId)}/posting/all` : '/gallog'
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [headerModal, setHeaderModal] = useState(null)
   const userMenuRef = useRef(null)
   const headerSearchRef = useRef(null)
 
@@ -176,6 +179,27 @@ export function Header() {
                           >
                             {item.label}
                           </Link>
+                        ) : item.to ? (
+                          <Link
+                            key={item.key}
+                            to={item.to}
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="block px-3 py-1.5 text-[#333] hover:bg-[#f5f7fb]"
+                          >
+                            {item.label}
+                          </Link>
+                        ) : item.modal ? (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => {
+                              setIsUserMenuOpen(false)
+                              setHeaderModal(item.modal)
+                            }}
+                            className="block w-full px-3 py-1.5 text-left text-[#333] hover:bg-[#f5f7fb]"
+                          >
+                            {item.label}
+                          </button>
                         ) : (
                           <button
                             key={item.key}
@@ -277,6 +301,9 @@ export function Header() {
           </a>
         </div>
       </div>
+
+      <UserManageJoinModal open={headerModal === 'manage-join'} onClose={() => setHeaderModal(null)} />
+      <UserNotificationsModal open={headerModal === 'notifications'} onClose={() => setHeaderModal(null)} />
     </header>
   )
 }

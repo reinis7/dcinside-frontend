@@ -110,6 +110,13 @@ export function AuthProvider({ children }) {
   }, [loadViewer])
 
   const logout = useCallback(() => {
+    try {
+      for (const k of Object.keys(sessionStorage)) {
+        if (k.startsWith('dcinside.myinfo.modify.')) sessionStorage.removeItem(k)
+      }
+    } catch {
+      // ignore
+    }
     authApi.logout()
   }, [])
 

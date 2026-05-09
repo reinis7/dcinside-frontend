@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../../../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../../../api/firstGraphQLErrorMessage'
+import { UserManageJoinModal } from '../../../common/UserManageJoinModal'
+import { UserNotificationsModal } from '../../../common/UserNotificationsModal'
 
 export function LoginBox() {
   const navigate = useNavigate()
@@ -25,6 +27,7 @@ export function LoginBox() {
     secureConn: true,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [userModal, setUserModal] = useState(null)
 
   const canLogin = form.userId.trim().length > 0 && form.password.length > 0 && !isSubmitting && !isLoading
 
@@ -93,7 +96,7 @@ export function LoginBox() {
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
+              onClick={() => navigate('/sign/myinfo/modify')}
             >
               고정닉정보
             </button>
@@ -107,7 +110,7 @@ export function LoginBox() {
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
+              onClick={() => setUserModal('manage-join')}
             >
               운영/가입
             </button>
@@ -121,7 +124,7 @@ export function LoginBox() {
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
+              onClick={() => setUserModal('notifications')}
             >
               알림
             </button>
@@ -221,6 +224,9 @@ export function LoginBox() {
           </div>
         </>
       )}
+
+      <UserManageJoinModal open={userModal === 'manage-join'} onClose={() => setUserModal(null)} />
+      <UserNotificationsModal open={userModal === 'notifications'} onClose={() => setUserModal(null)} />
     </div>
   )
 }

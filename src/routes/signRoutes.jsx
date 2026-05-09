@@ -5,6 +5,8 @@ import { SignJoinAgreePage } from '../pages/sign/SignJoinAgreePage'
 import { SignJoinInfoPage } from '../pages/sign/SignJoinInfoPage'
 import { SignJoinSecurityPage } from '../pages/sign/SignJoinSecurityPage'
 import { SignJoinDonePage } from '../pages/sign/SignJoinDonePage'
+import { SignMyinfoModifyPage } from '../pages/sign/SignMyinfoModifyPage'
+import { RequireAuth } from '../auth/RequireAuth'
 
 function SignHomePage() {
   return (
@@ -97,6 +99,14 @@ function SignLayout() {
           <Route path="join/info" element={<SignJoinInfoPage />} />
           <Route path="join/security" element={<SignJoinSecurityPage />} />
           <Route path="join/done" element={<SignJoinDonePage />} />
+          <Route
+            path="myinfo/modify"
+            element={
+              <RequireAuth>
+                <SignMyinfoModifyPage />
+              </RequireAuth>
+            }
+          />
           <Route path="help/find-id" element={<SignFindIdPage />} />
           <Route
             path="help/reset-password"
