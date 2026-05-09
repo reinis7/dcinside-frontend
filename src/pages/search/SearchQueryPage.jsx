@@ -5,44 +5,52 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 
+const SEARCH_POST_FIELDS_FRAGMENT = gql`
+  fragment SearchPostFields on Post {
+    id
+    databaseId
+    title
+    excerpt
+    date
+    uri
+    dcinsideGalleryId
+    dcinsideGalleryType
+    categories {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+    author {
+      node {
+        name
+      }
+    }
+  }
+`
+
 const SEARCH_POSTS_QUERY = gql`
   query SearchPosts($keyword: String!, $first: Int = 25) {
     posts(first: $first, where: { search: $keyword, orderby: { field: DATE, order: DESC } }) {
       nodes {
-        id
-        databaseId
-        title
-        excerpt
-        date
-        uri
-        author {
-          node {
-            name
-          }
-        }
+        ...SearchPostFields
       }
     }
   }
+  ${SEARCH_POST_FIELDS_FRAGMENT}
 `
 
 const SEARCH_POSTS_RELEVANCE_QUERY = gql`
   query SearchPostsByRelevance($keyword: String!, $first: Int = 25) {
     posts(first: $first, where: { search: $keyword, orderby: { field: RELEVANCE, order: DESC } }) {
       nodes {
-        id
-        databaseId
-        title
-        excerpt
-        date
-        uri
-        author {
-          node {
-            name
-          }
-        }
+        ...SearchPostFields
       }
     }
   }
+  ${SEARCH_POST_FIELDS_FRAGMENT}
 `
 
 const SEARCH_GALLERY_POOL_QUERY = gql`
@@ -87,6 +95,45 @@ function snippetFromPost(node, maxLen = 140) {
   if (ex) return ex.length > maxLen ? `${ex.slice(0, maxLen)}…` : ex
   const t = stripHtml(node?.title)
   return t.length > maxLen ? `${t.slice(0, maxLen)}…` : t
+}
+
+/** dcinsideGalleryType → SPA 게시판 base 경로 (gallRoutes와 동일 규칙) */
+function boardBasePrefixForGalleryType(typeRaw) {
+  const t = String(typeRaw ?? '')
+    .trim()
+    .toUpperCase()
+  if (t === 'MAIN') return '/gall/board'
+  if (t === 'MINOR') return '/gall/mgallery/board'
+  if (t === 'MINI') return '/gall/mini/board'
+  if (t === 'PERSON') return '/gall/p/board'
+  return '/gall/board'
+}
+
+function galleryTypeShortLabel(typeRaw) {
+  const t = String(typeRaw ?? '')
+    .trim()
+    .toUpperCase()
+  if (t === 'MAIN') return '메인'
+  if (t === 'MINOR') return '마이너'
+  if (t === 'MINI') return '미니'
+  if (t === 'PERSON') return '인물'
+  return t || ''
+}
+
+function buildDcinsidePostViewHref({ galleryType, galleryId, postDatabaseId }) {
+  if (galleryId == null || String(galleryId).trim() === '') return null
+  if (postDatabaseId == null) return null
+  const base = boardBasePrefixForGalleryType(galleryType)
+  const gid = encodeURIComponent(String(galleryId).trim())
+  const no = encodeURIComponent(String(postDatabaseId))
+  return `${base}/view/?id=${gid}&no=${no}`
+}
+
+function buildDcinsideGalleryListHref({ galleryType, galleryId }) {
+  if (galleryId == null || String(galleryId).trim() === '') return null
+  const base = boardBasePrefixForGalleryType(galleryType)
+  const gid = encodeURIComponent(String(galleryId).trim())
+  return `${base}/lists/?id=${gid}`
 }
 
 const TABS = [
@@ -148,15 +195,39 @@ export function SearchQueryPage() {
 
   const postRows = useMemo(() => {
     const nodes = postsQuery.data?.posts?.nodes ?? []
-    return nodes.map((node) => ({
-      key: node.id || String(node.databaseId),
-      databaseId: node.databaseId,
-      title: stripHtml(node.title) || '제목 없음',
-      snippet: snippetFromPost(node),
-      writer: node.author?.node?.name?.trim() || '-',
-      writtenAt: formatPostDate(node.date),
-      uri: node.uri || '',
-    }))
+    return nodes.map((node) => {
+      const galleryId = node.dcinsideGalleryId != null ? String(node.dcinsideGalleryId).trim() : ''
+      const galleryType = node.dcinsideGalleryType != null ? String(node.dcinsideGalleryType).trim() : ''
+      const categoryName =
+        node.categories?.edges?.find((e) => e?.node?.name)?.node?.name?.trim() || ''
+      const internalViewHref = buildDcinsidePostViewHref({
+        galleryType,
+        galleryId,
+        postDatabaseId: node.databaseId,
+      })
+      const galleryListHref = buildDcinsideGalleryListHref({ galleryType, galleryId })
+      const galleryLineLabel =
+        categoryName.length > 0
+          ? `${categoryName} 갤러리`
+          : galleryId
+            ? `${galleryId} (${galleryTypeShortLabel(galleryType)})`
+            : galleryTypeShortLabel(galleryType) || '갤러리'
+
+      return {
+        key: node.id || String(node.databaseId),
+        databaseId: node.databaseId,
+        title: stripHtml(node.title) || '제목 없음',
+        snippet: snippetFromPost(node),
+        writer: node.author?.node?.name?.trim() || '-',
+        writtenAt: formatPostDate(node.date),
+        wpUri: node.uri || '',
+        galleryId,
+        galleryType,
+        galleryLineLabel,
+        internalViewHref,
+        galleryListHref,
+      }
+    })
   }, [postsQuery.data])
 
   const totalGalleryPool = galleryPoolQuery.data?.dcinsideTopGalleriesByType?.length ?? 0
@@ -337,8 +408,15 @@ export function SearchQueryPage() {
                   {postRows.map((row) => (
                     <li key={row.key} className="px-3 py-3">
                       <div className="mb-1">
-                        {row.uri ? (
-                          <a href={row.uri} className="text-[13px] font-semibold text-[#0035ca] hover:underline">
+                        {row.internalViewHref ? (
+                          <Link
+                            to={row.internalViewHref}
+                            className="text-[13px] font-semibold text-[#0035ca] hover:underline"
+                          >
+                            {row.title}
+                          </Link>
+                        ) : row.wpUri ? (
+                          <a href={row.wpUri} className="text-[13px] font-semibold text-[#0035ca] hover:underline">
                             {row.title}
                           </a>
                         ) : (
@@ -347,7 +425,15 @@ export function SearchQueryPage() {
                       </div>
                       <p className="mb-2 line-clamp-2 text-[12px] leading-relaxed text-[#555]">{row.snippet}</p>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#888]">
-                        <span className="text-[#2e9b57]">워드프레스 게시물</span>
+                        {row.galleryListHref ? (
+                          <Link to={row.galleryListHref} className="text-[#2e9b57] hover:underline">
+                            {row.galleryLineLabel}
+                          </Link>
+                        ) : row.galleryId || row.galleryType ? (
+                          <span className="text-[#2e9b57]">{row.galleryLineLabel}</span>
+                        ) : (
+                          <span className="text-[#2e9b57]">갤러리 미연결</span>
+                        )}
                         <span>{row.writer}</span>
                         <span>{row.writtenAt}</span>
                         {row.databaseId ? <span className="text-[#bbb]">#{row.databaseId}</span> : null}
