@@ -25,6 +25,10 @@ const MAIN_GALLERY_LIST_PAGE_QUERY = gql`
       databaseId
       date
       title
+      writer
+      viewCount
+      recommendCount
+      headText
     }
   }
 `
@@ -58,14 +62,17 @@ function toRows(nodes) {
   return (nodes ?? []).map((node, idx) => {
     const postNo = node?.databaseId ? String(node.databaseId) : '-'
     const seed = Number(node?.databaseId ?? idx + 1)
-    const viewCount = (seed * 13) % 50000
-    const recommendCount = (seed * 7) % 300
+    const writerRaw = node?.writer ?? node?.authorName
+    const writer = stripHtml(String(writerRaw ?? '')).trim() || '-'
+    const viewCount = typeof node?.viewCount === 'number' ? node.viewCount : (seed * 13) % 50000
+    const recommendCount = typeof node?.recommendCount === 'number' ? node.recommendCount : (seed * 7) % 300
+    const headLabel = stripHtml(node?.headText)
     return {
       no: postNo,
       postDatabaseId: node?.databaseId ?? null,
-      type: idx < 2 ? '공지' : '일반',
+      type: headLabel || (idx < 2 ? '공지' : '일반'),
       title: stripHtml(node?.title) || '제목 없음',
-      writer: idx < 2 ? '운영자' : `갤러${(seed % 90) + 10}`,
+      writer,
       writtenAt: formatWrittenAt(node?.date),
       viewCount,
       recommendCount,
