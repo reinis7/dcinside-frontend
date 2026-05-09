@@ -1,4 +1,5 @@
 import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client/core'
+import { authEnsureLink } from './authEnsureLink'
 import { authLink } from './authLink'
 import { getGraphqlUri } from './graphqlEndpoint'
 
@@ -9,7 +10,7 @@ const httpLink = new HttpLink({
 })
 
 export const apolloClient = new ApolloClient({
-  link: ApolloLink.from([authLink, httpLink]),
+  link: ApolloLink.from([authEnsureLink, authLink, httpLink]),
   cache: new InMemoryCache(),
   connectToDevTools: import.meta.env.DEV,
 })

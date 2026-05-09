@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client/react'
 import { useEffect, useMemo, useState } from 'react'
 import JoditEditor from 'jodit-react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import 'jodit/es2021/jodit.min.css'
 import { useAuth } from '../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
@@ -214,16 +215,16 @@ export function GallMinorBoardWritePage() {
     const trimmedTitle = title.trim()
     const trimmedContent = htmlContent.trim()
     if (!trimmedTitle || !trimmedContent) {
-      window.alert('제목과 내용을 입력해 주세요.')
+      toast.warning('제목과 내용을 입력해 주세요.')
       return
     }
     setIsSubmitting(true)
     try {
       await createGalleryPost({ boardBase, title: trimmedTitle, content: trimmedContent, galleryId: String(galleryId) })
-      window.alert('게시글이 등록되었습니다.')
+      toast.success('게시글이 등록되었습니다.')
       navigate(listHref)
     } catch (err) {
-      window.alert(firstGraphQLErrorMessage(err))
+      toast.error(firstGraphQLErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }

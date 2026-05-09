@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { apolloClient } from '../apollo/apolloClient'
 import * as authApi from './authApi'
 import { AuthContext } from './authContext'
-import { clearTokens, isAccessTokenValid } from './jwtStorage'
+import { hasRenewableStoredSession } from './jwtStorage'
 
 const VIEWER_STORAGE_KEY = 'dcinside.viewer'
 
@@ -31,7 +32,7 @@ function saveCachedViewer(viewer) {
 }
 
 export function AuthProvider({ children }) {
-  const initialHasValidToken = isAccessTokenValid(0)
+  const initialHasValidToken = hasRenewableStoredSession(0)
   const [viewer, setViewer] = useState(() => (initialHasValidToken ? loadCachedViewer() : null))
   const [isLoading, setIsLoading] = useState(() => !(initialHasValidToken && Boolean(loadCachedViewer())))
 
@@ -66,6 +67,19 @@ export function AuthProvider({ children }) {
     void loadViewer()
   }, [initialHasValidToken, loadViewer, viewer])
 
+  /** 만료·리프레시 실패 등으로 토큰이 지워지면 로그아웃과 동일하게 UI·Apollo 캐시 정리 */
+  useEffect(() => {
+    return authApi.subscribeSessionInvalidation(({ reason }) => {
+      setViewer(null)
+      saveCachedViewer(null)
+      void apolloClient.clearStore().catch(() => {})
+      setIsLoading(false)
+      if (reason !== 'logout') {
+        toast.info('세션이 만료되어 로그아웃되었습니다.')
+      }
+    })
+  }, [])
+
   // 다른 탭에서 로그인/로그아웃해도 현재 탭 UI를 즉시 동기화
   useEffect(() => {
     const onStorage = (e) => {
@@ -97,10 +111,6 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     authApi.logout()
-    clearTokens()
-    setViewer(null)
-    saveCachedViewer(null)
-    void apolloClient.clearStore().catch(() => {})
   }, [])
 
   const value = useMemo(

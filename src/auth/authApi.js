@@ -3,9 +3,32 @@ import { apolloClient } from '../apollo/apolloClient'
 import {
   clearTokens,
   getRefreshToken,
-  isAccessTokenValid,
+  hasRenewableStoredSession,
+  isRefreshTokenValid,
   saveTokensFromAuthPayload,
 } from './jwtStorage'
+
+const sessionInvalidationListeners = new Set()
+
+/**
+ * 로컬 세션 제거 시 호출 (만료·리프레시 실패 등). AuthProvider가 viewer·캐시 정리에 구독합니다.
+ * @param {(detail: { reason: 'logout' | 'invalidated' }) => void} listener
+ */
+export function subscribeSessionInvalidation(listener) {
+  sessionInvalidationListeners.add(listener)
+  return () => sessionInvalidationListeners.delete(listener)
+}
+
+function invalidateSessionFromApi(reason = 'invalidated') {
+  clearTokens()
+  for (const fn of sessionInvalidationListeners) {
+    try {
+      fn({ reason })
+    } catch {
+      // ignore listener errors
+    }
+  }
+}
 
 /** 동시에 여러 요청이 만료 토큰을 감지해도 리프레시는 한 번만 실행 */
 let refreshInFlight = null
@@ -56,9 +79,15 @@ async function fetchViewerOnce({ signal, allowRefreshRetry }) {
     })
     return data
   } catch (err) {
-    if (!allowRefreshRetry) throw err
+    if (!allowRefreshRetry) {
+      if (isUnauthError(err)) invalidateSessionFromApi()
+      throw err
+    }
     if (!isUnauthError(err)) throw err
-    if (!getRefreshToken()) throw err
+    if (!getRefreshToken()) {
+      invalidateSessionFromApi()
+      throw err
+    }
 
     await refreshSession({ signal })
     return await fetchViewerOnce({ signal, allowRefreshRetry: false })
@@ -98,9 +127,12 @@ export async function refreshSession({ signal } = {}) {
       if (payload?.authToken && payload?.refreshToken) {
         saveTokensFromAuthPayload(payload)
       } else {
-        clearTokens()
+        invalidateSessionFromApi()
       }
       return data
+    } catch (err) {
+      invalidateSessionFromApi()
+      throw err
     } finally {
       refreshInFlight = null
     }
@@ -111,17 +143,22 @@ export async function refreshSession({ signal } = {}) {
 
 /** 앱 부트·viewer 전에 호출: 액세스 없거나 곧 만료면 refresh */
 export async function ensureValidAccessToken({ signal } = {}) {
-  if (isAccessTokenValid()) return true
+  if (hasRenewableStoredSession(0)) return true
+
   const refreshToken = getRefreshToken()
-  if (!refreshToken) {
-    clearTokens()
+  if (!refreshToken || !isRefreshTokenValid(0)) {
+    invalidateSessionFromApi()
     return false
   }
   try {
     await refreshSession({ signal })
-    return isAccessTokenValid()
+    if (!hasRenewableStoredSession(0)) {
+      invalidateSessionFromApi()
+      return false
+    }
+    return true
   } catch {
-    clearTokens()
+    // refreshSession 실패 시 이미 invalidateSessionFromApi 호출됨
     return false
   }
 }
@@ -154,7 +191,7 @@ export async function login({ userId, password, signal }) {
   if (payload?.authToken && payload?.refreshToken) {
     saveTokensFromAuthPayload(payload)
   } else if (payload?.user) {
-    clearTokens()
+    invalidateSessionFromApi()
     throw new Error('로그인 응답에 토큰이 없습니다.')
   }
   return data
@@ -162,5 +199,5 @@ export async function login({ userId, password, signal }) {
 
 /** 서버 로그아웃 없음 — 로컬 JWT만 제거 */
 export function logout() {
-  clearTokens()
+  invalidateSessionFromApi('logout')
 }

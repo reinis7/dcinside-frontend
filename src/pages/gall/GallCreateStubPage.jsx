@@ -1,6 +1,7 @@
 import { useQuery } from '@apollo/client/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { apolloClient } from '../../apollo/apolloClient'
 import { MainGalleryCreateForm } from './create/MainGalleryCreateForm'
@@ -104,7 +105,7 @@ export function GallCreateStubPage() {
 
   async function handleCreate() {
     if (!canSubmit) {
-      window.alert('필수 입력/동의 항목을 확인해 주세요.')
+      toast.warning('필수 입력/동의 항목을 확인해 주세요.')
       return
     }
 
@@ -148,10 +149,10 @@ export function GallCreateStubPage() {
       if (!result?.success) {
         throw new Error(result?.message || '갤러리 생성에 실패했습니다.')
       }
-      window.alert(`${galleryLabel} 생성 요청이 완료되었습니다.`)
+      toast.success(`${galleryLabel} 생성 요청이 완료되었습니다.`)
       navigate(backTo)
     } catch (err) {
-      window.alert(firstGraphQLErrorMessage(err))
+      toast.error(firstGraphQLErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }

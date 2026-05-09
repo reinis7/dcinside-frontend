@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useAuth } from '../../../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../../../api/firstGraphQLErrorMessage'
 
@@ -23,7 +24,6 @@ export function LoginBox() {
     saveId: false,
     secureConn: true,
   })
-  const [errorMsg, setErrorMsg] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const canLogin = form.userId.trim().length > 0 && form.password.length > 0 && !isSubmitting && !isLoading
@@ -36,12 +36,12 @@ export function LoginBox() {
   const onSubmit = async (e) => {
     e.preventDefault()
     if (!canLogin) return
-    setErrorMsg('')
     setIsSubmitting(true)
     try {
       await login({ userId: form.userId, password: form.password })
+      toast.success('로그인되었습니다.')
     } catch (err) {
-      setErrorMsg(firstGraphQLErrorMessage(err))
+      toast.error(firstGraphQLErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -68,7 +68,7 @@ export function LoginBox() {
               <button
                 type="button"
                 className="h-[26px] rounded border border-[#b1b1b1] bg-white px-2 text-[#333] hover:bg-[#f3f3f3]"
-                onClick={() => window.alert('로컬 환경에서는 미구현입니다.')}
+                onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
               >
                 2단계
               </button>
@@ -93,35 +93,35 @@ export function LoginBox() {
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => window.alert('로컬 환경에서는 미구현입니다.')}
+              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
             >
               고정닉정보
             </button>
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => window.alert('로컬 환경에서는 미구현입니다.')}
+              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
             >
               즐겨찾기
             </button>
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => window.alert('로컬 환경에서는 미구현입니다.')}
+              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
             >
               운영/가입
             </button>
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => window.alert('로컬 환경에서는 미구현입니다.')}
+              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
             >
               스크랩
             </button>
             <button
               type="button"
               className="h-[28px] rounded border border-[#d3d3d3] bg-white hover:bg-[#f3f3f3]"
-              onClick={() => window.alert('로컬 환경에서는 미구현입니다.')}
+              onClick={() => toast.info('로컬 환경에서는 미구현입니다.')}
             >
               알림
             </button>
@@ -186,12 +186,6 @@ export function LoginBox() {
             </div>
           </form>
 
-          {errorMsg ? (
-            <div className="mt-2 rounded border border-[#f2b8b5] bg-[#fff5f5] px-2 py-1 text-[11px] text-[#d31900]">
-              {errorMsg}
-            </div>
-          ) : null}
-
           <div className="mt-2 flex items-center justify-between border-t border-dashed border-[#d3d3d3] pt-2 text-[11px]">
             <div className="flex items-center gap-2 text-[#333]">
               <a
@@ -220,7 +214,7 @@ export function LoginBox() {
               type="button"
               className="inline-flex h-[18px] w-[18px] items-center justify-center rounded bg-[#f3f3f3] text-[12px] text-[#666]"
               aria-label="알림"
-              onClick={() => window.alert('로컬 환경에서는 알림 기능이 아직 없습니다.')}
+              onClick={() => toast.info('로컬 환경에서는 알림 기능이 아직 없습니다.')}
             >
               🔔
             </button>

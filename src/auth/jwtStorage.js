@@ -93,6 +93,11 @@ function getAccessExpiresAtMs() {
   return parseExpiresAtMs(raw)
 }
 
+function getRefreshExpiresAtMs() {
+  const raw = loadTokens()?.refreshExpiresAt
+  return parseExpiresAtMs(raw)
+}
+
 /** 액세스 토큰이 있고, 만료 시각이 있으면 bufferMs 전까지 유효로 봄. 만료 시각 없으면 토큰만 있으면 유효. */
 export function isAccessTokenValid(bufferMs = 60_000) {
   const token = getAccessToken()
@@ -100,4 +105,22 @@ export function isAccessTokenValid(bufferMs = 60_000) {
   const exp = getAccessExpiresAtMs()
   if (exp == null) return true
   return exp - Date.now() > bufferMs
+}
+
+/** 리프레시 토큰 만료 시각이 있으면 bufferMs 전까지 유효. 만료 시각 없으면 토큰만 있으면 유효. */
+export function isRefreshTokenValid(bufferMs = 60_000) {
+  const token = getRefreshToken()
+  if (!token) return false
+  const exp = getRefreshExpiresAtMs()
+  if (exp == null) return true
+  return exp - Date.now() > bufferMs
+}
+
+/**
+ * 액세스가 메타상 유효해도 리프레시가 없거나 만료면 세션을 이어갈 수 없음 → 로그아웃 처리와 동일하게 보냄.
+ */
+export function hasRenewableStoredSession(bufferMs = 0) {
+  if (!isAccessTokenValid(bufferMs)) return false
+  const rt = getRefreshToken()
+  return Boolean(rt && isRefreshTokenValid(bufferMs))
 }
