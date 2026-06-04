@@ -32,7 +32,7 @@ function pickMediaUrl(media) {
 
 async function uploadMediaWithRest(file) {
   const authHeader = getAuthorizationHeader()
-  if (!authHeader) throw new Error('이미지 업로드는 로그인이 필요합니다.')
+  if (!authHeader) throw new Error('미디어 업로드는 로그인이 필요합니다.')
 
   const formData = new FormData()
   formData.append('file', file, file.name)
@@ -52,14 +52,14 @@ async function uploadMediaWithRest(file) {
     if (response.status === 401 || response.status === 403) {
       throw new Error(
         payload?.message ||
-          '이미지 업로드 권한이 없습니다. WordPress REST 미디어 API가 현재 로그인 토큰을 인증하지 못하고 있습니다.',
+          '미디어 업로드 권한이 없습니다. WordPress REST 미디어 API가 현재 로그인 토큰을 인증하지 못하고 있습니다.',
       )
     }
-    throw new Error(payload?.message || `이미지 업로드에 실패했습니다. (${response.status})`)
+    throw new Error(payload?.message || `미디어 업로드에 실패했습니다. (${response.status})`)
   }
 
   const url = pickMediaUrl(payload)
-  if (!url) throw new Error('업로드된 이미지 주소를 찾을 수 없습니다.')
+  if (!url) throw new Error('업로드된 미디어 주소를 찾을 수 없습니다.')
 
   return {
     id: payload?.id ?? null,
@@ -70,10 +70,10 @@ async function uploadMediaWithRest(file) {
 }
 
 export async function uploadWordpressMedia(file) {
-  if (!file) throw new Error('업로드할 이미지를 선택해 주세요.')
+  if (!file) throw new Error('업로드할 미디어를 선택해 주세요.')
 
   const hasValidAccess = await ensureValidAccessToken()
-  if (!hasValidAccess) throw new Error('이미지 업로드는 로그인이 필요합니다.')
+  if (!hasValidAccess) throw new Error('미디어 업로드는 로그인이 필요합니다.')
 
   return await uploadMediaWithRest(file)
 }

@@ -16,10 +16,21 @@ function imageHtmlFromMedia(media, file) {
   return `<p><img src="${src}" alt="${alt}" /></p>`
 }
 
+function videoHtmlFromMedia(media) {
+  const src = escapeHtmlAttribute(media.sourceUrl)
+  return `<p><video controls src="${src}" style="max-width: 100%; height: auto;"></video></p>`
+}
+
+function htmlFromMedia(media, file, mediaType) {
+  if (mediaType === 'video') return videoHtmlFromMedia(media)
+  return imageHtmlFromMedia(media, file)
+}
+
 export function GallPostImageUploadButton({
   children = '이미지 첨부',
   className = '',
   disabled = false,
+  mediaType = 'image',
   onError,
   onUploaded,
   onUploadingChange,
@@ -37,17 +48,17 @@ export function GallPostImageUploadButton({
     event.target.value = ''
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      onError?.('이미지 파일만 업로드할 수 있습니다.')
+    if (!file.type.startsWith(`${mediaType}/`)) {
+      onError?.(mediaType === 'video' ? '동영상 파일만 업로드할 수 있습니다.' : '이미지 파일만 업로드할 수 있습니다.')
       return
     }
 
     setUploading(true)
     try {
       const media = await uploadWordpressMedia(file)
-      onUploaded?.(imageHtmlFromMedia(media, file), media)
+      onUploaded?.(htmlFromMedia(media, file, mediaType), media)
     } catch (error) {
-      onError?.(error?.message || '이미지 업로드에 실패했습니다.')
+      onError?.(error?.message || (mediaType === 'video' ? '동영상 업로드에 실패했습니다.' : '이미지 업로드에 실패했습니다.'))
     } finally {
       setUploading(false)
     }
@@ -63,7 +74,7 @@ export function GallPostImageUploadButton({
       >
         {isUploading ? '업로드 중...' : children}
       </button>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input ref={inputRef} type="file" accept={`${mediaType}/*`} className="hidden" onChange={handleFileChange} />
     </>
   )
 }
