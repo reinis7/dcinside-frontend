@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { apolloClient } from '../../apollo/apolloClient'
 import { InlineLoader } from '../../components/common/Loader'
+import { GallPostImageUploadButton } from './GallPostImageUploadButton'
 
 const GALLERY_DETAIL_QUERY = gql`
   query GalleryWriteDetail($galleryId: String!) {
@@ -181,6 +182,7 @@ export function GallMinorBoardWritePage() {
   const [nickname, setNickname] = useState('')
   const [htmlContent, setHtmlContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isImageUploading, setIsImageUploading] = useState(false)
 
   const listHref = useMemo(() => `/gall/${boardBase}/board/lists/?id=${encodeURIComponent(galleryId)}`, [boardBase, galleryId])
   const displayName = viewer?.username || viewer?.name || ''
@@ -208,6 +210,10 @@ export function GallMinorBoardWritePage() {
 
   async function handleSubmit() {
     if (isSubmitting) return
+    if (isImageUploading) {
+      toast.warning('이미지 업로드가 끝난 후 등록해 주세요.')
+      return
+    }
     if (!isAuthed) {
       navigate(`/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`)
       return
@@ -291,7 +297,19 @@ export function GallMinorBoardWritePage() {
           <div className="px-3 pb-3 pt-2">
             <div className="border border-[#d9d9d9] bg-[#fafafa]">
               <div className="flex items-center gap-1 border-b border-[#e5e5e5] px-2 py-1">
-                {['이미지', '동영상', '디시콘', '유튜브', '외부컨텐츠', '시리즈', '투표', 'AI 이미지'].map((item) => (
+                <GallPostImageUploadButton
+                  className="h-[28px] border border-[#d2d2d2] bg-white px-3 text-[13px] text-[#444] disabled:opacity-60"
+                  disabled={isSubmitting}
+                  onError={(message) => toast.error(message)}
+                  onUploadingChange={setIsImageUploading}
+                  onUploaded={(imageHtml) => {
+                    setHtmlContent((prev) => `${prev || ''}${prev ? '\n' : ''}${imageHtml}`)
+                    toast.success('이미지가 본문에 추가되었습니다.')
+                  }}
+                >
+                  이미지
+                </GallPostImageUploadButton>
+                {['동영상', '디시콘', '유튜브', '외부컨텐츠', '시리즈', '투표', 'AI 이미지'].map((item) => (
                   <button key={item} type="button" className="h-[28px] border border-[#d2d2d2] bg-white px-3 text-[13px] text-[#444]">
                     {item}
                   </button>
@@ -331,9 +349,9 @@ export function GallMinorBoardWritePage() {
             type="button"
             className="h-[28px] min-w-[68px] rounded border border-[#293f90] bg-[#2f4aa0] px-3 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isImageUploading}
           >
-            {isSubmitting ? '등록중' : '등록'}
+            {isImageUploading ? '업로드중' : isSubmitting ? '등록중' : '등록'}
           </button>
         </div>
 

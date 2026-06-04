@@ -1,0 +1,79 @@
+import { getAuthorizationHeader } from '../auth/jwtStorage'
+import { ensureValidAccessToken } from '../auth/authApi'
+
+function trimTrailingSlash(value) {
+  return String(value || '').replace(/\/+$/, '')
+}
+
+function getWordpressRestBaseUri() {
+  const fromEnv = import.meta.env.VITE_WORDPRESS_REST_URI?.trim()
+  if (fromEnv) return trimTrailingSlash(fromEnv)
+
+  const graphqlUri = import.meta.env.VITE_GRAPHQL_URI?.trim() || '/graphql'
+  if (graphqlUri.startsWith('/')) return '/wp-json/wp/v2'
+
+  try {
+    const url = new URL(graphqlUri)
+    return `${url.origin}/wp-json/wp/v2`
+  } catch {
+    return '/wp-json/wp/v2'
+  }
+}
+
+function getUploadEndpoint() {
+  const explicitEndpoint = import.meta.env.VITE_WORDPRESS_MEDIA_URI?.trim()
+  if (explicitEndpoint) return explicitEndpoint
+  return `${getWordpressRestBaseUri()}/media`
+}
+
+function pickMediaUrl(media) {
+  return media?.source_url || media?.media_details?.sizes?.full?.source_url || media?.guid?.rendered || ''
+}
+
+async function uploadMediaWithRest(file) {
+  const authHeader = getAuthorizationHeader()
+  if (!authHeader) throw new Error('이미지 업로드는 로그인이 필요합니다.')
+
+  const formData = new FormData()
+  formData.append('file', file, file.name)
+
+  const response = await fetch(getUploadEndpoint(), {
+    method: 'POST',
+    headers: {
+      Authorization: authHeader,
+      Accept: 'application/json',
+    },
+    credentials: 'include',
+    body: formData,
+  })
+
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        payload?.message ||
+          '이미지 업로드 권한이 없습니다. WordPress REST 미디어 API가 현재 로그인 토큰을 인증하지 못하고 있습니다.',
+      )
+    }
+    throw new Error(payload?.message || `이미지 업로드에 실패했습니다. (${response.status})`)
+  }
+
+  const url = pickMediaUrl(payload)
+  if (!url) throw new Error('업로드된 이미지 주소를 찾을 수 없습니다.')
+
+  return {
+    id: payload?.id ?? null,
+    sourceUrl: url,
+    altText: payload?.alt_text || '',
+    title: payload?.title?.rendered || file.name,
+  }
+}
+
+export async function uploadWordpressMedia(file) {
+  if (!file) throw new Error('업로드할 이미지를 선택해 주세요.')
+
+  const hasValidAccess = await ensureValidAccessToken()
+  if (!hasValidAccess) throw new Error('이미지 업로드는 로그인이 필요합니다.')
+
+  return await uploadMediaWithRest(file)
+}

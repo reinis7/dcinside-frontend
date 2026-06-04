@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apolloClient } from '../../apollo/apolloClient'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { useAuth } from '../../auth/authContext'
+import { GallPostImageUploadButton } from './GallPostImageUploadButton'
 import 'jodit/es2021/jodit.min.css'
 
 const CREATE_MAIN_POST_WITH_META_INPUT_MUTATION = gql`
@@ -50,6 +51,7 @@ export function GallMainBoardWritePage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
   const loginHref = `/sign/login?s_url=${encodeURIComponent(`/gall/board/write/?id=${galleryId}`)}`
@@ -71,6 +73,10 @@ export function GallMainBoardWritePage() {
   )
 
   async function handleSubmit() {
+    if (uploadingImage) {
+      setErrorMsg('이미지 업로드가 끝난 후 등록해 주세요.')
+      return
+    }
     if (!isAuthed) {
       nav(loginHref)
       return
@@ -146,6 +152,19 @@ export function GallMainBoardWritePage() {
 
           <label className="grid gap-1">
             <span className="text-[12px] font-semibold text-[#333]">내용</span>
+            <div className="flex items-center justify-between rounded-sm border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1">
+              <span className="text-[12px] text-[#666]">이미지를 업로드하면 본문에 자동으로 삽입됩니다.</span>
+              <GallPostImageUploadButton
+                className="h-[28px] rounded-sm border border-[#9da9c6] bg-white px-3 text-[12px] font-semibold text-[#2f3d8f] disabled:opacity-60"
+                disabled={submitting}
+                onError={setErrorMsg}
+                onUploadingChange={setUploadingImage}
+                onUploaded={(imageHtml) => {
+                  setContent((prev) => `${prev || ''}${prev ? '\n' : ''}${imageHtml}`)
+                  setErrorMsg('')
+                }}
+              />
+            </div>
             <div className="overflow-hidden rounded-sm border border-[#cfd4dd] bg-white">
               <JoditEditor value={content} config={editorConfig} onChange={setContent} />
             </div>
@@ -166,9 +185,9 @@ export function GallMainBoardWritePage() {
               type="button"
               onClick={handleSubmit}
               className="h-[34px] rounded-sm border border-[#2f3d8f] bg-[#3b4890] px-4 text-[13px] font-bold text-white disabled:opacity-60"
-              disabled={submitting}
+              disabled={submitting || uploadingImage}
             >
-              {submitting ? '등록 중...' : '등록'}
+              {uploadingImage ? '이미지 업로드 중...' : submitting ? '등록 중...' : '등록'}
             </button>
           </div>
         </div>

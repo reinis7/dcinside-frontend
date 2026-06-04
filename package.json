@@ -4,13 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host=0.0.0.0",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@apollo/client": "^4.1.7",
+    "apollo-upload-client": "^19.0.0",
     "dayjs": "^1.11.20",
     "graphql": "^16.13.2",
     "jodit-react": "^5.3.21",
