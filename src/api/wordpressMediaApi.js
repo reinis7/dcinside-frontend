@@ -1,29 +1,11 @@
 import { getAuthorizationHeader } from '../auth/jwtStorage'
 import { ensureValidAccessToken } from '../auth/authApi'
-
-function trimTrailingSlash(value) {
-  return String(value || '').replace(/\/+$/, '')
-}
-
-function getWordpressRestBaseUri() {
-  const fromEnv = import.meta.env.VITE_WORDPRESS_REST_URI?.trim()
-  if (fromEnv) return trimTrailingSlash(fromEnv)
-
-  const graphqlUri = import.meta.env.VITE_GRAPHQL_URI?.trim() || '/graphql'
-  if (graphqlUri.startsWith('/')) return '/wp-json/wp/v2'
-
-  try {
-    const url = new URL(graphqlUri)
-    return `${url.origin}/wp-json/wp/v2`
-  } catch {
-    return '/wp-json/wp/v2'
-  }
-}
+import { buildWordpressRestUrl } from './wordpressRestApi'
 
 function getUploadEndpoint() {
   const explicitEndpoint = import.meta.env.VITE_WORDPRESS_MEDIA_URI?.trim()
   if (explicitEndpoint) return explicitEndpoint
-  return `${getWordpressRestBaseUri()}/media`
+  return buildWordpressRestUrl('/media')
 }
 
 function pickMediaUrl(media) {
