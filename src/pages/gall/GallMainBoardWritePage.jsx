@@ -15,6 +15,7 @@ import { useAuth } from '../../auth/authContext'
 import { InlineLoader } from '../../components/common/Loader'
 import { gallBoardViewHref } from '../../utils/gallBoardPaths'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
+import { useJoditMediaInsert } from './useJoditMediaInsert'
 import 'jodit/es2021/jodit.min.css'
 
 const CREATE_MAIN_POST_WITH_META_INPUT_MUTATION = gql`
@@ -75,6 +76,7 @@ export function GallMainBoardWritePage() {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const { editorRef, insertMediaHtml } = useJoditMediaInsert(setContent)
   const [submitting, setSubmitting] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -226,7 +228,7 @@ export function GallMainBoardWritePage() {
                   onError={setErrorMsg}
                   onUploadingChange={setUploadingMedia}
                   onUploaded={(mediaHtml) => {
-                    setContent((prev) => `${prev || ''}${prev ? '\n' : ''}${mediaHtml}`)
+                    insertMediaHtml(mediaHtml)
                     setErrorMsg('')
                   }}
                 />
@@ -237,7 +239,7 @@ export function GallMainBoardWritePage() {
                   onError={setErrorMsg}
                   onUploadingChange={setUploadingMedia}
                   onUploaded={(mediaHtml) => {
-                    setContent((prev) => `${prev || ''}${prev ? '\n' : ''}${mediaHtml}`)
+                    insertMediaHtml(mediaHtml)
                     setErrorMsg('')
                   }}
                 >
@@ -246,7 +248,7 @@ export function GallMainBoardWritePage() {
               </div>
             </div>
             <div className="overflow-hidden rounded-sm border border-[#cfd4dd] bg-white">
-              <JoditEditor value={content} config={editorConfig} onChange={setContent} />
+              <JoditEditor ref={editorRef} value={content} config={editorConfig} onChange={setContent} />
             </div>
           </div>
 

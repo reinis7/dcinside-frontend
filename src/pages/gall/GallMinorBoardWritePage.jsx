@@ -17,6 +17,7 @@ import { apolloClient } from '../../apollo/apolloClient'
 import { InlineLoader } from '../../components/common/Loader'
 import { gallBoardViewHref } from '../../utils/gallBoardPaths'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
+import { useJoditMediaInsert } from './useJoditMediaInsert'
 
 const GALLERY_DETAIL_QUERY = gql`
   query GalleryWriteDetail($galleryId: String!) {
@@ -202,6 +203,7 @@ export function GallMinorBoardWritePage() {
   const [title, setTitle] = useState('')
   const [nickname, setNickname] = useState('')
   const [htmlContent, setHtmlContent] = useState('')
+  const { editorRef, insertMediaHtml } = useJoditMediaInsert(setHtmlContent)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isMediaUploading, setIsMediaUploading] = useState(false)
 
@@ -372,7 +374,7 @@ export function GallMinorBoardWritePage() {
                   onError={(message) => toast.error(message)}
                   onUploadingChange={setIsMediaUploading}
                   onUploaded={(mediaHtml) => {
-                    setHtmlContent((prev) => `${prev || ''}${prev ? '\n' : ''}${mediaHtml}`)
+                    insertMediaHtml(mediaHtml)
                     toast.success('이미지가 본문에 추가되었습니다.')
                   }}
                 >
@@ -385,7 +387,7 @@ export function GallMinorBoardWritePage() {
                   onError={(message) => toast.error(message)}
                   onUploadingChange={setIsMediaUploading}
                   onUploaded={(mediaHtml) => {
-                    setHtmlContent((prev) => `${prev || ''}${prev ? '\n' : ''}${mediaHtml}`)
+                    insertMediaHtml(mediaHtml)
                     toast.success('동영상이 본문에 추가되었습니다.')
                   }}
                 >
@@ -407,7 +409,7 @@ export function GallMinorBoardWritePage() {
               </div>
 
               <div className="bg-white">
-                <JoditEditor value={htmlContent} config={editorConfig} onChange={setHtmlContent} />
+                <JoditEditor ref={editorRef} value={htmlContent} config={editorConfig} onChange={setHtmlContent} />
               </div>
 
               <div className="flex items-center border-t border-[#e5e5e5] bg-[#fafafa] p-2">
