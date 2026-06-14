@@ -1,34 +1,13 @@
-import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { createWordpressComment, fetchWordpressComments } from '../../api/wordpressCommentsApi'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
+import { createGalleryComment, deleteGalleryComment, fetchGalleryPostComments, getCommentActionErrorMessage } from '../../api/gallCommentApi'
+import { deletePostById, findGalleryPostStats, GALL_POST_VIEW_QUERY, getPostActionErrorMessage, incrementPostView, recommendPost } from '../../api/gallPostApi'
 import { useAuth } from '../../auth/authContext'
+import { gallBoardListHref, gallBoardWriteHref, resolveGallBoardBase } from '../../utils/gallBoardPaths'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
-
-const POST_DETAIL_QUERY = gql`
-  query GallBoardDetail($id: ID!) {
-    post(id: $id, idType: DATABASE_ID) {
-      id
-      databaseId
-      slug
-      date
-      title
-      content
-      commentCount
-      commentStatus
-      categories {
-        edges {
-          node {
-            id
-            name
-          }
-        }
-      }
-    }
-  }
-`
 
 function decodeHtmlEntities(text) {
   if (!text) return ''
@@ -153,6 +132,80 @@ function addCommentButtonsToPostMedia(html, mediaCommentsByUrl) {
   return doc.body.innerHTML
 }
 
+function GallPostStatsControls({
+  commentCount,
+  hasRecommended,
+  isRecommending,
+  loginHref,
+  onRecommend,
+  onScrollComments,
+  recommendCount,
+  showLoginLink,
+  viewCount,
+}) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-2 text-[12px]">
+      <span className="font-semibold text-[#666]">조회 {viewCount ?? 0}</span>
+      <button
+        type="button"
+        className="h-[28px] rounded-sm border border-[#293f90] bg-[#2f4aa0] px-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={onRecommend}
+        disabled={hasRecommended || isRecommending}
+        title={hasRecommended ? '이미 추천한 글입니다.' : '추천'}
+      >
+        {isRecommending ? '처리중' : `추천 ${recommendCount ?? 0}`}
+      </button>
+      <button
+        type="button"
+        className="h-[28px] rounded-sm border border-[#cfd4dd] bg-white px-3 font-semibold text-[#333] hover:bg-[#f8f8f8]"
+        onClick={onScrollComments}
+      >
+        댓글 {commentCount ?? 0}
+      </button>
+      {showLoginLink && loginHref ? (
+        <Link to={loginHref} className="text-[#3b4890] hover:underline">
+          로그인
+        </Link>
+      ) : null}
+    </div>
+  )
+}
+
+function GallPostActionBar({
+  canManagePost,
+  editHref,
+  isDeleting,
+  listHref,
+  onDelete,
+  writeHref,
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1 border-y border-[#e5e5e5] py-2 text-[12px]">
+      <Link to={listHref} className="h-[28px] rounded-sm border border-[#cfd4dd] bg-white px-3 font-semibold text-[#333] hover:bg-[#f8f8f8]">
+        목록
+      </Link>
+      <Link to={writeHref} className="h-[28px] rounded-sm border border-[#9da9c6] bg-white px-3 font-semibold text-[#2f3d8f] hover:bg-[#f8f8f8]">
+        글쓰기
+      </Link>
+      {canManagePost ? (
+        <>
+          <Link to={editHref} className="h-[28px] rounded-sm border border-[#cfd4dd] bg-white px-3 font-semibold text-[#333] hover:bg-[#f8f8f8]">
+            수정
+          </Link>
+          <button
+            type="button"
+            className="h-[28px] rounded-sm border border-[#cfd4dd] bg-white px-3 font-semibold text-[#333] hover:bg-[#f8f8f8] disabled:opacity-60"
+            onClick={onDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? '삭제중' : '삭제'}
+          </button>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 function GallBoardCommentForm({
   currentUsername,
   disabled,
@@ -166,6 +219,7 @@ function GallBoardCommentForm({
   const [errorMsg, setErrorMsg] = useState('')
   const [isMediaUploading, setIsMediaUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitMode, setSubmitMode] = useState('general')
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -179,7 +233,7 @@ function GallBoardCommentForm({
     textareaRef.current?.focus()
   }, [draftRequest])
 
-  async function handleSubmit() {
+  async function handleSubmit(withRecommend) {
     if (isSubmitting || isMediaUploading) return
     if (!isAuthed) {
       setErrorMsg('댓글 작성은 로그인이 필요합니다.')
@@ -191,14 +245,19 @@ function GallBoardCommentForm({
       return
     }
 
+    setSubmitMode(withRecommend ? 'recommend' : 'general')
     setIsSubmitting(true)
     setErrorMsg('')
     try {
-      await createWordpressComment({ postDatabaseId, content: trimmedContent })
+      await createGalleryComment({
+        postDatabaseId,
+        content: trimmedContent,
+        withRecommend,
+      })
       setContent('')
-      await onCreated?.()
+      await onCreated?.(withRecommend)
     } catch (err) {
-      setErrorMsg(err?.message || '댓글 등록 중 오류가 발생했습니다.')
+      setErrorMsg(getCommentActionErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -267,10 +326,19 @@ function GallBoardCommentForm({
           <button
             type="button"
             className="h-[30px] rounded-sm border border-[#293f90] bg-[#2f4aa0] px-4 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(false)}
             disabled={disabled || !isAuthed || !isCommentOpen || isSubmitting || isMediaUploading}
           >
-            {isMediaUploading ? '업로드중' : isSubmitting ? '등록중' : '등록'}
+            {isSubmitting && submitMode === 'general' ? '등록중' : '등록'}
+          </button>
+          <button
+            type="button"
+            className="h-[30px] rounded-sm border border-[#d31900] bg-[#e53935] px-4 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => handleSubmit(true)}
+            disabled={disabled || !isAuthed || !isCommentOpen || isSubmitting || isMediaUploading}
+            title="댓글과 함께 추천합니다"
+          >
+            {isSubmitting && submitMode === 'recommend' ? '등록중' : '댓글+추천'}
           </button>
         </div>
       </div>
@@ -280,42 +348,69 @@ function GallBoardCommentForm({
 
 export function GallBoardViewPage() {
   const loc = useLocation()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { isAuthed, viewer } = useAuth()
   const boardId = searchParams.get('id') || 'dcbest'
   const postNo = searchParams.get('no') || ''
   const hasValidPostNo = /^\d+$/.test(postNo)
+  const boardBase = resolveGallBoardBase(loc.pathname)
   const [comments, setComments] = useState([])
   const [commentsError, setCommentsError] = useState('')
   const [commentDraftRequest, setCommentDraftRequest] = useState(null)
   const [isCommentsLoading, setIsCommentsLoading] = useState(false)
+  const [viewCount, setViewCount] = useState(null)
+  const [recommendCount, setRecommendCount] = useState(null)
+  const [hasRecommended, setHasRecommended] = useState(false)
+  const [isRecommending, setIsRecommending] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletingCommentId, setDeletingCommentId] = useState(null)
+  const viewIncrementedRef = useRef(false)
 
-  const { data, loading, error, refetch } = useQuery(POST_DETAIL_QUERY, {
-    variables: { id: postNo },
+  const { data, loading, error, refetch } = useQuery(GALL_POST_VIEW_QUERY, {
+    variables: { id: postNo, galleryId: boardId },
     skip: !hasValidPostNo,
     fetchPolicy: 'network-only',
   })
 
   const post = data?.post ?? null
-  const categoryName = post?.categories?.edges?.[0]?.node?.name ?? '게시판'
+  const postStats = useMemo(
+    () => findGalleryPostStats(data?.galleryPosts, post?.databaseId),
+    [data?.galleryPosts, post?.databaseId],
+  )
+  const galleryId = post?.dcinsideGalleryId || boardId
+  const categoryName = stripHtml(post?.headText || postStats?.headText) || '게시판'
+  const writerName =
+    stripHtml(post?.writer) ||
+    stripHtml(postStats?.writer) ||
+    stripHtml(post?.author?.node?.username) ||
+    stripHtml(post?.author?.node?.name) ||
+    '-'
   const title = stripHtml(post?.title) || '제목 없음'
   const mediaCommentsByUrl = useMemo(() => buildMediaCommentsByUrl(comments), [comments])
   const postContentHtml = useMemo(
     () => addCommentButtonsToPostMedia(post?.content || '', mediaCommentsByUrl),
     [mediaCommentsByUrl, post?.content],
   )
-  const listHref = loc.pathname.includes('/gall/mgallery/board/view')
-    ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(boardId)}`
-    : loc.pathname.includes('/gall/mini/board/view')
-      ? `/gall/mini/board/lists/?id=${encodeURIComponent(boardId)}`
-      : loc.pathname.includes('/gall/p/board/view') || loc.pathname.includes('/gall/person/board/view')
-        ? `/gall/p/board/lists/?id=${encodeURIComponent(boardId)}`
-      : loc.pathname.includes('/gall/board/view')
-        ? `/gall/board/lists/?id=${encodeURIComponent(boardId)}`
-        : '/www'
+  const listHref = gallBoardListHref(boardBase, galleryId)
+  const writeHref = gallBoardWriteHref(boardBase, galleryId)
+  const editHref = post?.databaseId ? gallBoardWriteHref(boardBase, galleryId, post.databaseId) : writeHref
   const loginHref = `/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`
   const isCommentOpen = post?.commentStatus !== 'closed'
   const currentUsername = viewer?.username || viewer?.userId || viewer?.name || ''
+  const commentCount = comments.length || post?.commentCount || 0
+  const canManagePost = Boolean(
+    isAuthed &&
+      viewer?.databaseId &&
+      post?.author?.node?.databaseId &&
+      Number(viewer.databaseId) === Number(post.author.node.databaseId),
+  )
+
+  function canDeleteComment(comment) {
+    if (!isAuthed || !viewer?.databaseId || !comment) return false
+    if (canManagePost) return true
+    return Number(viewer.databaseId) === Number(comment.authorId)
+  }
 
   function handlePostContentClick(event) {
     const button = event.target.closest?.('[data-media-comment-button="true"]')
@@ -332,12 +427,29 @@ export function GallBoardViewPage() {
     setIsCommentsLoading(true)
     setCommentsError('')
     try {
-      setComments(await fetchWordpressComments(postDatabaseId))
+      setComments(await fetchGalleryPostComments(postDatabaseId))
     } catch (err) {
       setComments([])
-      setCommentsError(err?.message || '댓글을 불러오지 못했습니다.')
+      setCommentsError(getCommentActionErrorMessage(err))
     } finally {
       setIsCommentsLoading(false)
+    }
+  }
+
+  async function handleDeleteComment(comment) {
+    if (!comment?.id || deletingCommentId) return
+    const ok = window.confirm('이 댓글을 삭제할까요?')
+    if (!ok) return
+
+    setDeletingCommentId(comment.id)
+    try {
+      await deleteGalleryComment(comment.id)
+      toast.success('댓글이 삭제되었습니다.')
+      await Promise.all([loadComments(post.databaseId), refetch()])
+    } catch (err) {
+      toast.error(getCommentActionErrorMessage(err))
+    } finally {
+      setDeletingCommentId(null)
     }
   }
 
@@ -348,6 +460,91 @@ export function GallBoardViewPage() {
     }
     void loadComments(post.databaseId)
   }, [post?.databaseId])
+
+  useEffect(() => {
+    if (!post?.databaseId) return
+    const nextViewCount =
+      typeof post.viewCount === 'number'
+        ? post.viewCount
+        : typeof postStats?.viewCount === 'number'
+          ? postStats.viewCount
+          : 0
+    const nextRecommendCount =
+      typeof post.recommendCount === 'number'
+        ? post.recommendCount
+        : typeof postStats?.recommendCount === 'number'
+          ? postStats.recommendCount
+          : 0
+    setViewCount(nextViewCount)
+    setRecommendCount(nextRecommendCount)
+    setHasRecommended(Boolean(post.hasRecommended))
+  }, [
+    post?.databaseId,
+    post?.viewCount,
+    post?.recommendCount,
+    post?.hasRecommended,
+    postStats?.viewCount,
+    postStats?.recommendCount,
+  ])
+
+  useEffect(() => {
+    if (!post?.databaseId || viewIncrementedRef.current) return
+    viewIncrementedRef.current = true
+
+    void incrementPostView({ galleryId, databaseId: post.databaseId })
+      .then((result) => {
+        if (typeof result?.viewCount === 'number') setViewCount(result.viewCount)
+      })
+      .catch(() => {
+        viewIncrementedRef.current = false
+      })
+  }, [galleryId, post?.databaseId])
+
+  function scrollToComments() {
+    document.getElementById('gall-comment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  async function handleRecommend() {
+    if (!post?.databaseId || hasRecommended || isRecommending) return
+    if (!isAuthed) {
+      toast.error('추천은 로그인 후 이용할 수 있습니다.')
+      return
+    }
+
+    setIsRecommending(true)
+    try {
+      const result = await recommendPost({ galleryId, databaseId: post.databaseId })
+      if (!result) {
+        toast.info('추천 기능을 사용할 수 없습니다.')
+        return
+      }
+      if (typeof result.recommendCount === 'number') setRecommendCount(result.recommendCount)
+      setHasRecommended(Boolean(result.hasRecommended || result.alreadyRecommended))
+      if (result.alreadyRecommended) toast.info('이미 추천한 글입니다.')
+      else toast.success('추천했습니다.')
+    } catch (err) {
+      toast.error(getPostActionErrorMessage(err))
+    } finally {
+      setIsRecommending(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!post?.id || isDeleting) return
+    const ok = window.confirm('이 게시글을 삭제할까요?')
+    if (!ok) return
+
+    setIsDeleting(true)
+    try {
+      await deletePostById(post.id)
+      toast.success('게시글이 삭제되었습니다.')
+      navigate(listHref, { replace: true })
+    } catch (err) {
+      toast.error(getPostActionErrorMessage(err))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <section className="rounded border border-[#d3d3d3] bg-white">
@@ -382,16 +579,31 @@ export function GallBoardViewPage() {
         <article className="px-4 py-3">
           <header className="border-b border-[#efefef] pb-2">
             <h1 className="text-[18px] font-semibold text-[#222]">{title}</h1>
-            <div className="mt-1 text-[11px] text-[#777]">
-              <span>{categoryName}</span>
-              <span className="mx-1 text-[#bbb]">|</span>
-              <span>{formatDateTime(post.date)}</span>
-              {post.databaseId ? (
-                <>
-                  <span className="mx-1 text-[#bbb]">|</span>
-                  <span>no.{post.databaseId}</span>
-                </>
-              ) : null}
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+              <div className="min-w-0 text-[11px] text-[#777]">
+                <span className="font-semibold text-[#444]">{writerName}</span>
+                <span className="mx-1 text-[#bbb]">|</span>
+                <span>{categoryName}</span>
+                <span className="mx-1 text-[#bbb]">|</span>
+                <span>{formatDateTime(post.date)}</span>
+                {post.databaseId ? (
+                  <>
+                    <span className="mx-1 text-[#bbb]">|</span>
+                    <span>no.{post.databaseId}</span>
+                  </>
+                ) : null}
+              </div>
+              <GallPostStatsControls
+                commentCount={commentCount}
+                hasRecommended={hasRecommended}
+                isRecommending={isRecommending}
+                loginHref={loginHref}
+                onRecommend={handleRecommend}
+                onScrollComments={scrollToComments}
+                recommendCount={recommendCount ?? postStats?.recommendCount ?? 0}
+                showLoginLink={!isAuthed}
+                viewCount={viewCount ?? postStats?.viewCount ?? 0}
+              />
             </div>
           </header>
           <div
@@ -399,10 +611,18 @@ export function GallBoardViewPage() {
             onClick={handlePostContentClick}
             dangerouslySetInnerHTML={{ __html: postContentHtml }}
           />
-          <section className="mt-4 border-t border-[#e5e5e5] pt-3">
+          <GallPostActionBar
+            canManagePost={canManagePost}
+            editHref={editHref}
+            isDeleting={isDeleting}
+            listHref={listHref}
+            onDelete={handleDelete}
+            writeHref={writeHref}
+          />
+          <section id="gall-comment-section" className="mt-4 border-t border-[#e5e5e5] pt-3">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-[14px] font-bold text-[#222]">
-                댓글 <span className="text-[#d31900]">[{comments.length || post.commentCount || 0}]</span>
+                댓글 <span className="text-[#d31900]">[{commentCount}]</span>
               </h2>
               {!isAuthed ? (
                 <Link to={loginHref} className="text-[12px] font-semibold text-[#3b4890] hover:underline">
@@ -425,11 +645,25 @@ export function GallBoardViewPage() {
                   <div key={comment.id} className="grid grid-cols-[120px_1fr_120px] gap-2 px-2 py-2 text-[12px]">
                     <div className="truncate font-semibold text-[#333]">
                       {index > 0 && comments[index - 1]?.authorName === comment.authorName ? '' : stripHtml(comment.authorName) || '익명'}
+                      {comment.withRecommend ? (
+                        <span className="ml-1 rounded bg-[#e53935] px-1 py-0.5 text-[10px] font-bold text-white">
+                          추천
+                        </span>
+                      ) : null}
                     </div>
-                    <div
-                      className="break-words text-[#333]"
-                      dangerouslySetInnerHTML={{ __html: comment.content || '' }}
-                    />
+                    <div className="break-words text-[#333]">
+                      <div dangerouslySetInnerHTML={{ __html: comment.content || '' }} />
+                      {canDeleteComment(comment) ? (
+                        <button
+                          type="button"
+                          className="mt-1 text-[11px] font-semibold text-[#777] hover:text-[#d31900] disabled:opacity-60"
+                          onClick={() => handleDeleteComment(comment)}
+                          disabled={deletingCommentId === comment.id}
+                        >
+                          {deletingCommentId === comment.id ? '삭제중' : '삭제'}
+                        </button>
+                      ) : null}
+                    </div>
                     <div className="text-right text-[#777]">{formatDateTime(comment.date)}</div>
                   </div>
                 ))}
@@ -446,8 +680,10 @@ export function GallBoardViewPage() {
               draftRequest={commentDraftRequest}
               isAuthed={isAuthed}
               isCommentOpen={isCommentOpen}
-              onCreated={async () => {
+              onCreated={async (withRecommend) => {
                 await Promise.all([loadComments(post.databaseId), refetch()])
+                if (withRecommend) toast.success('댓글과 추천이 등록되었습니다.')
+                else toast.success('댓글이 등록되었습니다.')
               }}
               postDatabaseId={post.databaseId}
             />
