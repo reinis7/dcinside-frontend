@@ -1,14 +1,21 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import JoditEditor from 'jodit-react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import 'jodit/es2021/jodit.min.css'
 import { useAuth } from '../../auth/authContext'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
+import {
+  canUserEditPost,
+  GALL_POST_EDIT_QUERY,
+  stripPostTitleHtml,
+  updatePostById,
+} from '../../api/gallPostApi'
 import { apolloClient } from '../../apollo/apolloClient'
 import { InlineLoader } from '../../components/common/Loader'
+import { gallBoardViewHref } from '../../utils/gallBoardPaths'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
 
 const GALLERY_DETAIL_QUERY = gql`
@@ -167,6 +174,8 @@ export function GallMinorBoardWritePage() {
   const [searchParams] = useSearchParams()
   const { viewer, isAuthed } = useAuth()
   const galleryId = searchParams.get('id') || 'mgallery'
+  const postNo = searchParams.get('no') || ''
+  const isEditMode = /^\d+$/.test(postNo)
   const boardBase = loc.pathname.includes('/gall/mini/')
     ? 'mini'
     : loc.pathname.includes('/gall/p/') || loc.pathname.includes('/gall/person/')
@@ -178,6 +187,18 @@ export function GallMinorBoardWritePage() {
   })
   const gallery = data?.dcinsideGalleryByGalleryId ?? null
   const galleryTitle = gallery?.title ? stripHtml(gallery.title) : `${galleryId} 갤러리`
+  const {
+    data: editData,
+    loading: isEditLoading,
+    error: editQueryError,
+  } = useQuery(GALL_POST_EDIT_QUERY, {
+    variables: { id: postNo },
+    skip: !isEditMode,
+    fetchPolicy: 'network-only',
+  })
+  const editPost = editData?.post ?? null
+  const canEdit = !isEditMode || canUserEditPost(editPost, viewer)
+  const editInitializedRef = useRef(false)
   const [title, setTitle] = useState('')
   const [nickname, setNickname] = useState('')
   const [htmlContent, setHtmlContent] = useState('')
@@ -185,6 +206,10 @@ export function GallMinorBoardWritePage() {
   const [isMediaUploading, setIsMediaUploading] = useState(false)
 
   const listHref = useMemo(() => `/gall/${boardBase}/board/lists/?id=${encodeURIComponent(galleryId)}`, [boardBase, galleryId])
+  const viewHref = useMemo(
+    () => (isEditMode ? gallBoardViewHref(boardBase, galleryId, postNo) : listHref),
+    [boardBase, galleryId, isEditMode, listHref, postNo],
+  )
   const displayName = viewer?.username || viewer?.name || ''
   const editorConfig = useMemo(
     () => ({
@@ -208,6 +233,17 @@ export function GallMinorBoardWritePage() {
     setNickname(displayName)
   }, [displayName])
 
+  useEffect(() => {
+    editInitializedRef.current = false
+  }, [postNo])
+
+  useEffect(() => {
+    if (!editPost || editInitializedRef.current) return
+    editInitializedRef.current = true
+    setTitle(stripPostTitleHtml(editPost.title))
+    setHtmlContent(editPost.content || '')
+  }, [editPost])
+
   async function handleSubmit() {
     if (isSubmitting) return
     if (isMediaUploading) {
@@ -218,6 +254,18 @@ export function GallMinorBoardWritePage() {
       navigate(`/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`)
       return
     }
+    if (isEditMode && isEditLoading) {
+      toast.warning('게시글을 불러오는 중입니다.')
+      return
+    }
+    if (isEditMode && editQueryError) {
+      toast.error(firstGraphQLErrorMessage(editQueryError))
+      return
+    }
+    if (isEditMode && editPost && !canEdit) {
+      toast.error('수정 권한이 없습니다.')
+      return
+    }
     const trimmedTitle = title.trim()
     const trimmedContent = htmlContent.trim()
     if (!trimmedTitle || !trimmedContent) {
@@ -226,9 +274,15 @@ export function GallMinorBoardWritePage() {
     }
     setIsSubmitting(true)
     try {
-      await createGalleryPost({ boardBase, title: trimmedTitle, content: trimmedContent, galleryId: String(galleryId) })
-      toast.success('게시글이 등록되었습니다.')
-      navigate(listHref)
+      if (isEditMode) {
+        await updatePostById({ postId: editPost.id, title: trimmedTitle, content: trimmedContent })
+        toast.success('게시글이 수정되었습니다.')
+        navigate(viewHref)
+      } else {
+        await createGalleryPost({ boardBase, title: trimmedTitle, content: trimmedContent, galleryId: String(galleryId) })
+        toast.success('게시글이 등록되었습니다.')
+        navigate(listHref)
+      }
     } catch (err) {
       toast.error(firstGraphQLErrorMessage(err))
     } finally {
@@ -258,6 +312,21 @@ export function GallMinorBoardWritePage() {
       </div>
 
       <div className="p-5">
+        {isEditMode && isEditLoading ? (
+          <div className="mb-4 text-[13px] text-[#666]">
+            <InlineLoader label="게시글 불러오는 중..." />
+          </div>
+        ) : null}
+        {isEditMode && editQueryError ? (
+          <div className="mb-4 rounded border border-[#f0caca] bg-[#fff5f5] px-3 py-2 text-[13px] text-[#c62828]">
+            {firstGraphQLErrorMessage(editQueryError)}
+          </div>
+        ) : null}
+        {isEditMode && editPost && !canEdit ? (
+          <div className="mb-4 rounded border border-[#f0caca] bg-[#fff5f5] px-3 py-2 text-[13px] text-[#c62828]">
+            수정 권한이 없습니다.
+          </div>
+        ) : null}
         <div className="border border-[#d9d9d9]">
           <div className="grid grid-cols-[180px_1fr] gap-2 border-b border-[#dedede] bg-[#f8f8f8] px-3 py-2">
             <input
@@ -355,22 +424,22 @@ export function GallMinorBoardWritePage() {
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button type="button" className="h-[28px] min-w-[68px] rounded border border-[#4d4d4d] bg-[#666] px-3 text-[13px] font-bold text-white" onClick={() => navigate(listHref)}>
+          <button type="button" className="h-[28px] min-w-[68px] rounded border border-[#4d4d4d] bg-[#666] px-3 text-[13px] font-bold text-white" onClick={() => navigate(viewHref)}>
             취소
           </button>
           <button
             type="button"
             className="h-[28px] min-w-[68px] rounded border border-[#293f90] bg-[#2f4aa0] px-3 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleSubmit}
-            disabled={isSubmitting || isMediaUploading}
+            disabled={isSubmitting || isMediaUploading || (isEditMode && (isEditLoading || !canEdit))}
           >
-            {isMediaUploading ? '업로드중' : isSubmitting ? '등록중' : '등록'}
+            {isMediaUploading ? '업로드중' : isSubmitting ? (isEditMode ? '수정중' : '등록중') : isEditMode ? '수정' : '등록'}
           </button>
         </div>
 
         <div className="mt-4">
-          <Link to={listHref} className="text-[12px] text-[#334499] hover:underline">
-            목록으로 돌아가기
+          <Link to={viewHref} className="text-[12px] text-[#334499] hover:underline">
+            {isEditMode ? '글보기로 돌아가기' : '목록으로 돌아가기'}
           </Link>
         </div>
       </div>

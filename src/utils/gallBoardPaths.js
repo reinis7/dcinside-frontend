@@ -16,3 +16,9 @@ export function gallBoardWriteHref(boardBase, galleryId, postNo) {
   if (boardBase === 'board') return `/gall/board/write/?${query}${editSuffix}`
   return `/gall/${boardBase}/board/write/?${query}${editSuffix}`
 }
+
+export function gallBoardViewHref(boardBase, galleryId, postNo) {
+  const query = `id=${encodeURIComponent(galleryId)}&no=${encodeURIComponent(String(postNo))}`
+  if (boardBase === 'board') return `/gall/board/view/?${query}`
+  return `/gall/${boardBase}/board/view/?${query}`
+}

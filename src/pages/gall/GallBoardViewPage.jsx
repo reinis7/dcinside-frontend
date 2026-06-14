@@ -4,9 +4,19 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { createGalleryComment, deleteGalleryComment, fetchGalleryPostComments, getCommentActionErrorMessage } from '../../api/gallCommentApi'
-import { deletePostById, findGalleryPostStats, GALL_POST_VIEW_QUERY, getPostActionErrorMessage, incrementPostView, recommendPost } from '../../api/gallPostApi'
+import {
+  deletePostById,
+  findGalleryPostStats,
+  GALL_POST_VIEW_QUERY,
+  getPostActionErrorMessage,
+  incrementPostView,
+  recommendPost,
+  recommendSilbePost,
+} from '../../api/gallPostApi'
 import { useAuth } from '../../auth/authContext'
-import { gallBoardListHref, gallBoardWriteHref, resolveGallBoardBase } from '../../utils/gallBoardPaths'
+import { gallBoardListHref, gallBoardViewHref, gallBoardWriteHref, resolveGallBoardBase } from '../../utils/gallBoardPaths'
+import { hasLocalSilbeRecommended, markLocalSilbeRecommended } from '../../utils/silbeRecommendStorage'
+import { GallPostEngagementPanel } from './GallPostEngagementPanel'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
 
 function decodeHtmlEntities(text) {
@@ -72,6 +82,14 @@ function buildMediaCommentsByUrl(comments) {
   return grouped
 }
 
+function getMediaCommentsSignature(comments) {
+  const mediaComments = comments
+    .map((comment) => parseMediaComment(comment))
+    .filter(Boolean)
+  if (mediaComments.length === 0) return ''
+  return mediaComments.map((item) => `${item.mediaUrl}:${item.body}`).join('|')
+}
+
 function getMediaUrl(mediaEl) {
   if (!mediaEl) return ''
   if (mediaEl.tagName?.toLowerCase() === 'img') return mediaEl.getAttribute('src') || ''
@@ -130,6 +148,37 @@ function addCommentButtonsToPostMedia(html, mediaCommentsByUrl) {
   }
 
   return doc.body.innerHTML
+}
+
+function CommentDeleteIconButton({ disabled, onClick }) {
+  return (
+    <button
+      type="button"
+      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-[#999] hover:bg-[#f5f5f5] hover:text-[#d31900] disabled:cursor-not-allowed disabled:opacity-40"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="댓글 삭제"
+      title="댓글 삭제"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M3 6h18" />
+        <path d="M8 6V4h8v2" />
+        <path d="M19 6l-1 14H6L5 6" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+      </svg>
+    </button>
+  )
 }
 
 function GallPostStatsControls({
@@ -362,7 +411,9 @@ export function GallBoardViewPage() {
   const [viewCount, setViewCount] = useState(null)
   const [recommendCount, setRecommendCount] = useState(null)
   const [hasRecommended, setHasRecommended] = useState(false)
+  const [hasSilbeRecommended, setHasSilbeRecommended] = useState(false)
   const [isRecommending, setIsRecommending] = useState(false)
+  const [isSilbeRecommending, setIsSilbeRecommending] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deletingCommentId, setDeletingCommentId] = useState(null)
   const viewIncrementedRef = useRef(false)
@@ -370,10 +421,12 @@ export function GallBoardViewPage() {
   const { data, loading, error, refetch } = useQuery(GALL_POST_VIEW_QUERY, {
     variables: { id: postNo, galleryId: boardId },
     skip: !hasValidPostNo,
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first',
   })
 
   const post = data?.post ?? null
+  const isInitialPostLoading = loading && !post
   const postStats = useMemo(
     () => findGalleryPostStats(data?.galleryPosts, post?.databaseId),
     [data?.galleryPosts, post?.databaseId],
@@ -387,7 +440,8 @@ export function GallBoardViewPage() {
     stripHtml(post?.author?.node?.name) ||
     '-'
   const title = stripHtml(post?.title) || '제목 없음'
-  const mediaCommentsByUrl = useMemo(() => buildMediaCommentsByUrl(comments), [comments])
+  const mediaCommentsSignature = useMemo(() => getMediaCommentsSignature(comments), [comments])
+  const mediaCommentsByUrl = useMemo(() => buildMediaCommentsByUrl(comments), [mediaCommentsSignature])
   const postContentHtml = useMemo(
     () => addCommentButtonsToPostMedia(post?.content || '', mediaCommentsByUrl),
     [mediaCommentsByUrl, post?.content],
@@ -395,6 +449,11 @@ export function GallBoardViewPage() {
   const listHref = gallBoardListHref(boardBase, galleryId)
   const writeHref = gallBoardWriteHref(boardBase, galleryId)
   const editHref = post?.databaseId ? gallBoardWriteHref(boardBase, galleryId, post.databaseId) : writeHref
+  const viewHref = post?.databaseId ? gallBoardViewHref(boardBase, galleryId, post.databaseId) : `${loc.pathname}${loc.search}`
+  const shareUrl = useMemo(() => {
+    if (typeof window === 'undefined') return viewHref
+    return `${window.location.origin}${viewHref}`
+  }, [viewHref])
   const loginHref = `/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`
   const isCommentOpen = post?.commentStatus !== 'closed'
   const currentUsername = viewer?.username || viewer?.userId || viewer?.name || ''
@@ -422,17 +481,32 @@ export function GallBoardViewPage() {
     document.getElementById('gall-comment-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
-  async function loadComments(postDatabaseId) {
+  async function loadComments(postDatabaseId, { silent = false } = {}) {
     if (!postDatabaseId) return
-    setIsCommentsLoading(true)
+    if (!silent) setIsCommentsLoading(true)
     setCommentsError('')
     try {
       setComments(await fetchGalleryPostComments(postDatabaseId))
     } catch (err) {
-      setComments([])
+      if (!silent) setComments([])
       setCommentsError(getCommentActionErrorMessage(err))
     } finally {
-      setIsCommentsLoading(false)
+      if (!silent) setIsCommentsLoading(false)
+    }
+  }
+
+  async function refreshPostStats() {
+    try {
+      const result = await refetch()
+      const nextPost = result.data?.post
+      const nextStats = findGalleryPostStats(result.data?.galleryPosts, nextPost?.databaseId)
+      if (typeof nextPost?.viewCount === 'number') setViewCount(nextPost.viewCount)
+      else if (typeof nextStats?.viewCount === 'number') setViewCount(nextStats.viewCount)
+      if (typeof nextPost?.recommendCount === 'number') setRecommendCount(nextPost.recommendCount)
+      else if (typeof nextStats?.recommendCount === 'number') setRecommendCount(nextStats.recommendCount)
+      if (typeof nextPost?.hasRecommended === 'boolean') setHasRecommended(nextPost.hasRecommended)
+    } catch {
+      // Keep current UI values if background refresh fails.
     }
   }
 
@@ -442,11 +516,14 @@ export function GallBoardViewPage() {
     if (!ok) return
 
     setDeletingCommentId(comment.id)
+    const previousComments = comments
+    setComments((prev) => prev.filter((item) => item.id !== comment.id))
     try {
       await deleteGalleryComment(comment.id)
       toast.success('댓글이 삭제되었습니다.')
-      await Promise.all([loadComments(post.databaseId), refetch()])
+      await Promise.all([loadComments(post.databaseId, { silent: true }), refreshPostStats()])
     } catch (err) {
+      setComments(previousComments)
       toast.error(getCommentActionErrorMessage(err))
     } finally {
       setDeletingCommentId(null)
@@ -486,6 +563,14 @@ export function GallBoardViewPage() {
     postStats?.viewCount,
     postStats?.recommendCount,
   ])
+
+  useEffect(() => {
+    if (!post?.databaseId) {
+      setHasSilbeRecommended(false)
+      return
+    }
+    setHasSilbeRecommended(hasLocalSilbeRecommended(viewer?.databaseId, post.databaseId))
+  }, [post?.databaseId, viewer?.databaseId])
 
   useEffect(() => {
     if (!post?.databaseId || viewIncrementedRef.current) return
@@ -529,6 +614,30 @@ export function GallBoardViewPage() {
     }
   }
 
+  async function handleSilbeRecommend() {
+    if (!post?.databaseId || hasSilbeRecommended || isSilbeRecommending) return
+
+    setIsSilbeRecommending(true)
+    try {
+      const result = await recommendSilbePost({ galleryId, databaseId: post.databaseId })
+      if (result) {
+        setHasSilbeRecommended(Boolean(result.hasSilbeRecommended || result.alreadySilbeRecommended))
+        if (result.alreadySilbeRecommended) toast.info('이미 실베추천한 글입니다.')
+        else toast.success('실베추천했습니다.')
+        return
+      }
+
+      markLocalSilbeRecommended(viewer?.databaseId, post.databaseId)
+      setHasSilbeRecommended(true)
+      toast.success('실베추천했습니다.')
+    } catch (err) {
+      toast.error(getPostActionErrorMessage(err))
+      throw err
+    } finally {
+      setIsSilbeRecommending(false)
+    }
+  }
+
   async function handleDelete() {
     if (!post?.id || isDeleting) return
     const ok = window.confirm('이 게시글을 삭제할까요?')
@@ -565,17 +674,19 @@ export function GallBoardViewPage() {
         <div className="px-4 py-6 text-[12px] text-[#666]">잘못된 게시글 번호입니다.</div>
       ) : null}
 
-      {hasValidPostNo && loading ? <div className="px-4 py-6 text-[12px] text-[#666]">게시글 불러오는 중...</div> : null}
+      {hasValidPostNo && isInitialPostLoading ? (
+        <div className="px-4 py-6 text-[12px] text-[#666]">게시글 불러오는 중...</div>
+      ) : null}
 
-      {hasValidPostNo && !loading && error ? (
+      {hasValidPostNo && !isInitialPostLoading && error ? (
         <div className="px-4 py-6 text-[12px] text-[#d31900]">게시글을 불러오지 못했습니다: {error.message}</div>
       ) : null}
 
-      {hasValidPostNo && !loading && !error && !post ? (
+      {hasValidPostNo && !isInitialPostLoading && !error && !post ? (
         <div className="px-4 py-6 text-[12px] text-[#666]">게시글이 없습니다.</div>
       ) : null}
 
-      {hasValidPostNo && !loading && !error && post ? (
+      {hasValidPostNo && !isInitialPostLoading && !error && post ? (
         <article className="px-4 py-3">
           <header className="border-b border-[#efefef] pb-2">
             <h1 className="text-[18px] font-semibold text-[#222]">{title}</h1>
@@ -611,6 +722,19 @@ export function GallBoardViewPage() {
             onClick={handlePostContentClick}
             dangerouslySetInnerHTML={{ __html: postContentHtml }}
           />
+          <GallPostEngagementPanel
+            hasRecommended={hasRecommended}
+            hasSilbeRecommended={hasSilbeRecommended}
+            isAuthed={isAuthed}
+            isRecommending={isRecommending}
+            isSilbeRecommending={isSilbeRecommending}
+            onConceptRecommend={handleRecommend}
+            onSilbeLoginRequired={() => toast.error('실베추천은 로그인 후 이용할 수 있습니다.')}
+            onSilbeRecommend={handleSilbeRecommend}
+            postTitle={title}
+            recommendCount={recommendCount ?? postStats?.recommendCount ?? 0}
+            shareUrl={shareUrl}
+          />
           <GallPostActionBar
             canManagePost={canManagePost}
             editHref={editHref}
@@ -635,14 +759,14 @@ export function GallBoardViewPage() {
               <div className="mb-2 text-[12px] font-semibold text-[#d31900]">{commentsError}</div>
             ) : null}
 
-            {isCommentsLoading ? (
+            {isCommentsLoading && comments.length === 0 ? (
               <div className="border-y border-[#efefef] px-2 py-5 text-center text-[12px] text-[#777]">
                 댓글 불러오는 중...
               </div>
             ) : comments.length > 0 ? (
               <div className="divide-y divide-[#efefef] border-y border-[#efefef]">
                 {comments.map((comment, index) => (
-                  <div key={comment.id} className="grid grid-cols-[120px_1fr_120px] gap-2 px-2 py-2 text-[12px]">
+                  <div key={comment.id} className="grid grid-cols-[120px_1fr_auto] gap-2 px-2 py-2 text-[12px]">
                     <div className="truncate font-semibold text-[#333]">
                       {index > 0 && comments[index - 1]?.authorName === comment.authorName ? '' : stripHtml(comment.authorName) || '익명'}
                       {comment.withRecommend ? (
@@ -651,20 +775,19 @@ export function GallBoardViewPage() {
                         </span>
                       ) : null}
                     </div>
-                    <div className="break-words text-[#333]">
-                      <div dangerouslySetInnerHTML={{ __html: comment.content || '' }} />
+                    <div
+                      className="break-words text-[#333]"
+                      dangerouslySetInnerHTML={{ __html: comment.content || '' }}
+                    />
+                    <div className="flex min-w-[88px] items-center justify-end gap-2 self-start">
+                      <div className="text-right text-[#777]">{formatDateTime(comment.date)}</div>
                       {canDeleteComment(comment) ? (
-                        <button
-                          type="button"
-                          className="mt-1 text-[11px] font-semibold text-[#777] hover:text-[#d31900] disabled:opacity-60"
-                          onClick={() => handleDeleteComment(comment)}
+                        <CommentDeleteIconButton
                           disabled={deletingCommentId === comment.id}
-                        >
-                          {deletingCommentId === comment.id ? '삭제중' : '삭제'}
-                        </button>
+                          onClick={() => handleDeleteComment(comment)}
+                        />
                       ) : null}
                     </div>
-                    <div className="text-right text-[#777]">{formatDateTime(comment.date)}</div>
                   </div>
                 ))}
               </div>
@@ -681,9 +804,15 @@ export function GallBoardViewPage() {
               isAuthed={isAuthed}
               isCommentOpen={isCommentOpen}
               onCreated={async (withRecommend) => {
-                await Promise.all([loadComments(post.databaseId), refetch()])
-                if (withRecommend) toast.success('댓글과 추천이 등록되었습니다.')
-                else toast.success('댓글이 등록되었습니다.')
+                await loadComments(post.databaseId, { silent: true })
+                if (withRecommend) {
+                  setHasRecommended(true)
+                  setRecommendCount((prev) => (typeof prev === 'number' ? prev : 0) + 1)
+                  await refreshPostStats()
+                  toast.success('댓글과 추천이 등록되었습니다.')
+                } else {
+                  toast.success('댓글이 등록되었습니다.')
+                }
               }}
               postDatabaseId={post.databaseId}
             />
