@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { uploadWordpressMedia } from '../../api/wordpressMediaApi'
 
 function escapeHtmlAttribute(value) {
@@ -35,7 +35,6 @@ export function GallPostImageUploadButton({
   onUploaded,
   onUploadingChange,
 }) {
-  const inputRef = useRef(null)
   const [isUploading, setIsUploading] = useState(false)
 
   function setUploading(nextValue) {
@@ -64,17 +63,22 @@ export function GallPostImageUploadButton({
     }
   }
 
+  function openFilePicker() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = `${mediaType}/*`
+    input.onchange = handleFileChange
+    input.click()
+  }
+
   return (
-    <>
-      <button
-        type="button"
-        className={className}
-        disabled={disabled || isUploading}
-        onClick={() => inputRef.current?.click()}
-      >
-        {isUploading ? '업로드 중...' : children}
-      </button>
-      <input ref={inputRef} type="file" accept={`${mediaType}/*`} className="hidden" onChange={handleFileChange} />
-    </>
+    <button
+      type="button"
+      className={className}
+      disabled={disabled || isUploading}
+      onClick={openFilePicker}
+    >
+      {isUploading ? '업로드 중...' : children}
+    </button>
   )
 }

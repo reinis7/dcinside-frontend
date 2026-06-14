@@ -139,7 +139,7 @@ export function GallMainBoardWritePage() {
         ) : null}
 
         <div className="grid gap-2">
-          <label className="grid gap-1">
+          <div className="grid gap-1">
             <span className="text-[12px] font-semibold text-[#333]">제목</span>
             <input
               value={title}
@@ -148,9 +148,9 @@ export function GallMainBoardWritePage() {
               placeholder="제목을 입력하세요"
               disabled={submitting}
             />
-          </label>
+          </div>
 
-          <label className="grid gap-1">
+          <div className="grid gap-1">
             <span className="text-[12px] font-semibold text-[#333]">내용</span>
             <div className="flex items-center justify-between rounded-sm border border-[#e5e7eb] bg-[#f9fafb] px-2 py-1">
               <span className="text-[12px] text-[#666]">이미지/동영상을 업로드하면 본문에 자동으로 삽입됩니다.</span>
@@ -183,7 +183,7 @@ export function GallMainBoardWritePage() {
             <div className="overflow-hidden rounded-sm border border-[#cfd4dd] bg-white">
               <JoditEditor value={content} config={editorConfig} onChange={setContent} />
             </div>
-          </label>
+          </div>
 
           {errorMsg ? <div className="text-[12px] font-semibold text-[#d31900]">{errorMsg}</div> : null}
 
