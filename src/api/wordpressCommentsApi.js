@@ -36,7 +36,7 @@ async function fetchUsernamesById(authorIds) {
     const namesById = Object.fromEntries(
       users.map((user) => [
         Number(user.databaseId),
-        user.username || user.nicename || user.nickname || user.name || user.slug || '',
+        user.name || user.nickname || user.username || user.nicename || user.slug || '',
       ]),
     )
     if (Object.keys(namesById).length > 0) return namesById
@@ -55,7 +55,7 @@ async function fetchUsernamesById(authorIds) {
     return Object.fromEntries(
       (Array.isArray(users) ? users : []).map((user) => [
         Number(user.id),
-        user.username || user.nicename || user.user_nicename || user.display_name || user.name || user.slug || '',
+        user.display_name || user.name || user.username || user.nicename || user.user_nicename || user.slug || '',
       ]),
     )
   } catch {
