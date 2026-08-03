@@ -15,7 +15,7 @@ import { useAuth } from '../../auth/authContext'
 import { InlineLoader } from '../../components/common/Loader'
 import { gallBoardViewHref } from '../../utils/gallBoardPaths'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
-import { useJoditMediaInsert } from './useJoditMediaInsert'
+import { useJoditEditorState } from './useJoditMediaInsert'
 import 'jodit/es2021/jodit.min.css'
 
 const CREATE_MAIN_POST_WITH_META_INPUT_MUTATION = gql`
@@ -75,8 +75,15 @@ export function GallMainBoardWritePage() {
   const editInitializedRef = useRef(false)
 
   const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const { editorRef, insertMediaHtml } = useJoditMediaInsert(setContent)
+  const {
+    editorRef,
+    value: editorSeed,
+    onChange: onEditorChange,
+    onBlur: onEditorBlur,
+    getContent,
+    setFromExternal,
+    insertMediaHtml,
+  } = useJoditEditorState('')
   const [submitting, setSubmitting] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -112,8 +119,8 @@ export function GallMainBoardWritePage() {
     if (!editPost || editInitializedRef.current) return
     editInitializedRef.current = true
     setTitle(stripPostTitleHtml(editPost.title))
-    setContent(editPost.content || '')
-  }, [editPost])
+    setFromExternal(editPost.content || '')
+  }, [editPost, setFromExternal])
 
   async function handleSubmit() {
     if (uploadingMedia) {
@@ -136,6 +143,7 @@ export function GallMainBoardWritePage() {
       setErrorMsg('수정 권한이 없습니다.')
       return
     }
+    const content = getContent()
     if (!title.trim() || !content.trim()) {
       setErrorMsg('제목과 내용을 입력해주세요.')
       return
@@ -248,7 +256,13 @@ export function GallMainBoardWritePage() {
               </div>
             </div>
             <div className="overflow-hidden rounded-sm border border-[#cfd4dd] bg-white">
-              <JoditEditor ref={editorRef} value={content} config={editorConfig} onChange={setContent} />
+              <JoditEditor
+                ref={editorRef}
+                value={editorSeed}
+                config={editorConfig}
+                onChange={onEditorChange}
+                onBlur={onEditorBlur}
+              />
             </div>
           </div>
 

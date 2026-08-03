@@ -17,7 +17,7 @@ import { apolloClient } from '../../apollo/apolloClient'
 import { InlineLoader } from '../../components/common/Loader'
 import { gallBoardViewHref } from '../../utils/gallBoardPaths'
 import { GallPostImageUploadButton } from './GallPostImageUploadButton'
-import { useJoditMediaInsert } from './useJoditMediaInsert'
+import { useJoditEditorState } from './useJoditMediaInsert'
 
 const GALLERY_DETAIL_QUERY = gql`
   query GalleryWriteDetail($galleryId: String!) {
@@ -202,8 +202,15 @@ export function GallMinorBoardWritePage() {
   const editInitializedRef = useRef(false)
   const [title, setTitle] = useState('')
   const [nickname, setNickname] = useState('')
-  const [htmlContent, setHtmlContent] = useState('')
-  const { editorRef, insertMediaHtml } = useJoditMediaInsert(setHtmlContent)
+  const {
+    editorRef,
+    value: editorSeed,
+    onChange: onEditorChange,
+    onBlur: onEditorBlur,
+    getContent,
+    setFromExternal,
+    insertMediaHtml,
+  } = useJoditEditorState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isMediaUploading, setIsMediaUploading] = useState(false)
 
@@ -243,8 +250,8 @@ export function GallMinorBoardWritePage() {
     if (!editPost || editInitializedRef.current) return
     editInitializedRef.current = true
     setTitle(stripPostTitleHtml(editPost.title))
-    setHtmlContent(editPost.content || '')
-  }, [editPost])
+    setFromExternal(editPost.content || '')
+  }, [editPost, setFromExternal])
 
   async function handleSubmit() {
     if (isSubmitting) return
@@ -269,7 +276,7 @@ export function GallMinorBoardWritePage() {
       return
     }
     const trimmedTitle = title.trim()
-    const trimmedContent = htmlContent.trim()
+    const trimmedContent = getContent().trim()
     if (!trimmedTitle || !trimmedContent) {
       toast.warning('제목과 내용을 입력해 주세요.')
       return
@@ -409,7 +416,13 @@ export function GallMinorBoardWritePage() {
               </div>
 
               <div className="bg-white">
-                <JoditEditor ref={editorRef} value={htmlContent} config={editorConfig} onChange={setHtmlContent} />
+                <JoditEditor
+                  ref={editorRef}
+                  value={editorSeed}
+                  config={editorConfig}
+                  onChange={onEditorChange}
+                  onBlur={onEditorBlur}
+                />
               </div>
 
               <div className="flex items-center border-t border-[#e5e5e5] bg-[#fafafa] p-2">
