@@ -6,6 +6,7 @@ import { buildWwwHomeMock } from '../../mocks/wwwHomeMock'
 import { RealtimeBestSection } from '../../components/www/home/RealtimeBestSection'
 import { ConceptSection } from '../../components/www/home/ConceptSection'
 import { RightSidebar } from '../../components/www/home/RightSidebar'
+import { buildDcinsidePostViewHref } from '../../utils/dcinsideGalleryLinks'
 
 const REALTIME_BEST_QUERY = gql`
   query NewQuery {
@@ -16,7 +17,8 @@ const REALTIME_BEST_QUERY = gql`
         date
         title
         content
-        databaseId
+        dcinsideGalleryId
+        dcinsideGalleryType
         categories {
           edges {
             node {
@@ -54,6 +56,13 @@ function toRealtimeBestItems(nodes) {
     const fallbackTitle = plainContent || '제목 없음'
     const categoryName = node.categories?.edges?.[0]?.node?.name
     const databaseId = node.databaseId
+    const galleryId = node.dcinsideGalleryId != null ? String(node.dcinsideGalleryId).trim() : ''
+    const href =
+      buildDcinsidePostViewHref({
+        galleryType: node.dcinsideGalleryType,
+        galleryId,
+        postDatabaseId: databaseId,
+      }) || '#'
 
     return {
       id: node.id,
@@ -62,7 +71,7 @@ function toRealtimeBestItems(nodes) {
       gallery: categoryName ?? '게시판',
       time: formatUpdatedAt(node.date),
       commentCount: 0,
-      href: databaseId ? `/gall/board/view/?id=dcbest&no=${databaseId}` : '#',
+      href,
       thumb: '/snapshot/nstatic.dcinside.com/dc/w/images/img_none1.jpg',
     }
   })

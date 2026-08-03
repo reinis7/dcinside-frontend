@@ -423,10 +423,13 @@ export function GallBoardViewPage() {
     skip: !hasValidPostNo,
     fetchPolicy: 'cache-and-network',
     nextFetchPolicy: 'cache-first',
+    // URL id may be a hub slug (e.g. dcbest); galleryPosts can fail while post is valid.
+    errorPolicy: 'all',
   })
 
   const post = data?.post ?? null
   const isInitialPostLoading = loading && !post
+  const postLoadError = !post ? error : null
   const postStats = useMemo(
     () => findGalleryPostStats(data?.galleryPosts, post?.databaseId),
     [data?.galleryPosts, post?.databaseId],
@@ -678,15 +681,17 @@ export function GallBoardViewPage() {
         <div className="px-4 py-6 text-[12px] text-[#666]">게시글 불러오는 중...</div>
       ) : null}
 
-      {hasValidPostNo && !isInitialPostLoading && error ? (
-        <div className="px-4 py-6 text-[12px] text-[#d31900]">게시글을 불러오지 못했습니다: {error.message}</div>
+      {hasValidPostNo && !isInitialPostLoading && postLoadError ? (
+        <div className="px-4 py-6 text-[12px] text-[#d31900]">
+          게시글을 불러오지 못했습니다: {postLoadError.message}
+        </div>
       ) : null}
 
-      {hasValidPostNo && !isInitialPostLoading && !error && !post ? (
+      {hasValidPostNo && !isInitialPostLoading && !postLoadError && !post ? (
         <div className="px-4 py-6 text-[12px] text-[#666]">게시글이 없습니다.</div>
       ) : null}
 
-      {hasValidPostNo && !isInitialPostLoading && !error && post ? (
+      {hasValidPostNo && !isInitialPostLoading && !postLoadError && post ? (
         <article className="px-4 py-3">
           <header className="border-b border-[#efefef] pb-2">
             <h1 className="text-[18px] font-semibold text-[#222]">{title}</h1>
