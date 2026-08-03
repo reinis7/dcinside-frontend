@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { registerUser } from '../../auth/registerApi'
+import { useCaptchaChallenge } from '../../auth/useCaptchaChallenge'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { useAuth } from '../../auth/authContext'
+import { CaptchaChallengeField } from '../../components/sign/CaptchaChallengeField'
 
 function makeSecurityCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase()
@@ -15,8 +17,12 @@ export function SignJoinSecurityPage() {
   const joinForm = location.state?.joinForm
   const generatedCode = useMemo(() => makeSecurityCode(), [])
   const securityCode = location.state?.securityCode ?? generatedCode
+  const { challenge, answer, setAnswer, loading: captchaLoading, loadError: captchaLoadError, refresh } =
+    useCaptchaChallenge()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+
+  const canSubmit = Boolean(challenge?.id) && answer.trim().length > 0 && !captchaLoading
 
   return (
     <section className="mx-auto w-[760px] border border-[#d1d5db] bg-white p-4 text-[12px]">
@@ -40,6 +46,18 @@ export function SignJoinSecurityPage() {
             <li>닉네임: {joinForm?.nickname ?? '(미입력)'}</li>
           </ul>
         </div>
+
+        <div className="mt-3">
+          <CaptchaChallengeField
+            challenge={challenge}
+            answer={answer}
+            onAnswerChange={setAnswer}
+            loading={captchaLoading}
+            loadError={captchaLoadError}
+            onRefresh={refresh}
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
 
       <div className="mt-4 flex items-center justify-between">
@@ -49,13 +67,13 @@ export function SignJoinSecurityPage() {
         <button
           type="button"
           className={
-            !isSubmitting
+            canSubmit && !isSubmitting
               ? 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#5f5f5f] bg-[#6c6c6c] px-4 text-[12px] font-semibold text-white'
               : 'inline-flex h-[28px] min-w-[56px] items-center justify-center rounded-sm border border-[#b1b1b1] bg-[#d8d8d8] px-4 text-[12px] font-semibold text-[#8a8a8a]'
           }
-          disabled={isSubmitting}
+          disabled={!canSubmit || isSubmitting}
           onClick={async () => {
-            if (isSubmitting) return
+            if (!canSubmit || isSubmitting) return
             setErrorMsg('')
             setIsSubmitting(true)
             try {
@@ -69,6 +87,8 @@ export function SignJoinSecurityPage() {
                 agreedPrivacy: Boolean(agree.privacy),
                 agreedMarketing: Boolean(agree.marketing),
                 securityCode,
+                captchaId: challenge.id,
+                captchaAnswer: answer.trim(),
               })
 
               const payload = registerData?.dcinsideRegisterUser
@@ -86,6 +106,7 @@ export function SignJoinSecurityPage() {
               })
             } catch (err) {
               setErrorMsg(firstGraphQLErrorMessage(err))
+              await refresh()
             } finally {
               setIsSubmitting(false)
             }

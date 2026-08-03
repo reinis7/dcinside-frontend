@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { registerUser } from '../../auth/registerApi'
+import { useCaptchaChallenge } from '../../auth/useCaptchaChallenge'
 import { useAuth } from '../../auth/authContext'
+import { CaptchaChallengeField } from '../../components/sign/CaptchaChallengeField'
 
 export function SignRegisterPage() {
   const navigate = useNavigate()
   const { login, loadViewer, viewer } = useAuth()
+  const { challenge, answer, setAnswer, loading: captchaLoading, loadError: captchaLoadError, refresh } =
+    useCaptchaChallenge()
   const [form, setForm] = useState({
     username: '',
     password: '',
@@ -25,7 +29,10 @@ export function SignRegisterPage() {
     form.password.length >= 8 &&
     form.nickname.trim().length > 0 &&
     form.agreedTerms &&
-    form.agreedPrivacy
+    form.agreedPrivacy &&
+    Boolean(challenge?.id) &&
+    answer.trim().length > 0 &&
+    !captchaLoading
 
   const onChange = (key) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
@@ -47,6 +54,8 @@ export function SignRegisterPage() {
         agreedPrivacy: form.agreedPrivacy,
         agreedMarketing: form.agreedMarketing,
         securityCode: form.securityCode.trim() ? form.securityCode.trim() : undefined,
+        captchaId: challenge.id,
+        captchaAnswer: answer.trim(),
       })
 
       const payload = registerData?.dcinsideRegisterUser
@@ -58,6 +67,7 @@ export function SignRegisterPage() {
       navigate('/www', { replace: true })
     } catch (err) {
       setErrorMsg(firstGraphQLErrorMessage(err))
+      await refresh()
     } finally {
       setIsSubmitting(false)
     }
@@ -102,6 +112,16 @@ export function SignRegisterPage() {
             className="rounded border border-[#d1d5db] px-3 py-2"
           />
         </label>
+
+        <CaptchaChallengeField
+          challenge={challenge}
+          answer={answer}
+          onAnswerChange={setAnswer}
+          loading={captchaLoading}
+          loadError={captchaLoadError}
+          onRefresh={refresh}
+          disabled={isSubmitting}
+        />
 
         <div className="grid gap-2">
           <label className="flex items-center gap-2">
