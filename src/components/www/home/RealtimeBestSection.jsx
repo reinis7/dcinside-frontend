@@ -20,7 +20,11 @@ export function RealtimeBestSection({ items, loading = false, errorMessage = nul
         </div>
         <div className="flex items-center gap-2">
           {loading ? <span className="text-[11px] text-[#666]">불러오는 중...</span> : null}
-          {!loading && errorMessage ? <span className="text-[11px] text-[#d31900]">불러오기 실패</span> : null}
+          {!loading && errorMessage ? (
+            <span className="text-[11px] text-[#d31900]" title={errorMessage}>
+              불러오기 실패: {errorMessage}
+            </span>
+          ) : null}
           <Pager
             page={page}
             totalPages={totalPages}

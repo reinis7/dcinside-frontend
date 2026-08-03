@@ -1,3 +1,5 @@
+import { localizeErrorMessage } from '../../api/firstGraphQLErrorMessage'
+
 export function CaptchaChallengeField({
   challenge,
   answer,
@@ -24,7 +26,7 @@ export function CaptchaChallengeField({
       {loading ? (
         <p className="text-[12px] text-[#666]">캡차를 불러오는 중...</p>
       ) : loadError ? (
-        <p className="text-[12px] text-[#d31900]">{loadError}</p>
+        <p className="text-[12px] text-[#d31900]">{localizeErrorMessage(loadError) || loadError}</p>
       ) : (
         <>
           <p className="text-[18px] font-bold tracking-wide">{challenge?.question}</p>

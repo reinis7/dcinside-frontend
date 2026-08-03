@@ -1,5 +1,6 @@
 import { ensureValidAccessToken } from '../auth/authApi'
 import { getAuthorizationHeader } from '../auth/jwtStorage'
+import { firstGraphQLErrorMessage, localizeErrorMessage } from './firstGraphQLErrorMessage'
 
 function trimTrailingSlash(value) {
   return String(value || '').replace(/\/+$/, '')
@@ -54,16 +55,23 @@ export async function wordpressRestRequest(path, { auth = false, body, headers, 
     requestHeaders['Content-Type'] = 'application/json'
   }
 
-  const response = await fetch(buildWordpressRestUrl(path, params), {
-    method,
-    headers: requestHeaders,
-    credentials: 'include',
-    body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
-  })
+  let response
+  try {
+    response = await fetch(buildWordpressRestUrl(path, params), {
+      method,
+      headers: requestHeaders,
+      credentials: 'include',
+      body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
+    })
+  } catch (err) {
+    throw new Error(firstGraphQLErrorMessage(err) || '서버에 연결하지 못했습니다. 네트워크 상태를 확인해 주세요.')
+  }
 
   const payload = response.status === 204 ? null : await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(payload?.message || `WordPress REST 요청에 실패했습니다. (${response.status})`)
+    throw new Error(
+      localizeErrorMessage(payload?.message) || `WordPress REST 요청에 실패했습니다. (${response.status})`,
+    )
   }
   return payload
 }

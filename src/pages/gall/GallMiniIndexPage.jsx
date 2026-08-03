@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 import { BlockLoader } from '../../components/common/Loader'
+import { GalleryAllViewSearch } from '../../components/gall/GalleryAllViewSearch'
 
 const GALLERY_PARENT_TOPICS = [
   '연예',
@@ -72,11 +73,14 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
+const MINI_CATEGORY_TOPICS = [...new Set(GALLERY_PARENT_TOPICS)]
+
 export function GallMiniIndexPage() {
   const navigate = useNavigate()
   const { isAuthed, isLoading, viewer, logout } = useAuth()
+  const [allViewOpen, setAllViewOpen] = useState(false)
   const { data, loading } = useQuery(MINI_TOPIC_TREE_QUERY, {
-    variables: { parentTopics: GALLERY_PARENT_TOPICS, limit: 50 },
+    variables: { parentTopics: MINI_CATEGORY_TOPICS, limit: 50 },
     fetchPolicy: 'network-only',
   })
   const topicTree = data?.dcinsideGalleryTopicTree ?? []
@@ -84,7 +88,7 @@ export function GallMiniIndexPage() {
 
   const sections = useMemo(() => {
     const map = new Map(topicTree.map((t) => [t?.name, t]))
-    return GALLERY_PARENT_TOPICS.map((name) => {
+    return MINI_CATEGORY_TOPICS.map((name) => {
       const topic = map.get(name)
       const galleries = (topic?.child ?? []).flatMap((c) => c?.galleries ?? []).filter((g) => g?.title)
       return {
@@ -95,6 +99,12 @@ export function GallMiniIndexPage() {
           title: stripHtml(g.title),
           description: stripHtml(g.description),
           href: `/gall/mini/board/lists/?id=${encodeURIComponent(String(g.slug ?? g.databaseId ?? ''))}`,
+        })),
+        allGalleries: galleries.map((g) => ({
+          key: String(g.slug ?? g.databaseId ?? g.title),
+          label: stripHtml(g.title),
+          href: `/gall/mini/board/lists/?id=${encodeURIComponent(String(g.slug ?? g.databaseId ?? ''))}`,
+          topicName: name,
         })),
       }
     })
@@ -123,6 +133,31 @@ export function GallMiniIndexPage() {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 20)
   }, [topicTree])
+
+  const allViewGalleries = useMemo(() => {
+    const rows = []
+    for (const section of sections) {
+      for (const g of section.allGalleries ?? []) {
+        rows.push({
+          key: `${section.name}_${g.key}`,
+          label: g.label,
+          href: g.href,
+          topicName: section.name,
+        })
+      }
+    }
+    return rows
+  }, [sections])
+
+  const allViewRecommended = useMemo(
+    () =>
+      topScoreGalleries.map((g) => ({
+        key: g.key,
+        title: g.title,
+        href: g.id ? `/gall/mini/board/lists/?id=${encodeURIComponent(g.id)}` : '#',
+      })),
+    [topScoreGalleries],
+  )
 
   if (loading) {
     return <BlockLoader label="미니 갤러리 불러오는 중..." />
@@ -198,6 +233,26 @@ export function GallMiniIndexPage() {
             </>
           )}
         </aside>
+      </div>
+
+      <div className="relative flex items-center justify-between">
+        <button
+          type="button"
+          className="h-[22px] rounded-full bg-[#2f3d8f] px-3 text-[12px] font-bold text-white"
+          aria-expanded={allViewOpen}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => setAllViewOpen((v) => !v)}
+        >
+          갤러리 전체보기
+        </button>
+        <GalleryAllViewSearch
+          open={allViewOpen}
+          onClose={() => setAllViewOpen(false)}
+          galleries={allViewGalleries}
+          recommended={allViewRecommended}
+          categories={MINI_CATEGORY_TOPICS}
+          galleryTypeName="미니"
+        />
       </div>
 
       <div className="border border-[#3b4890] bg-white">

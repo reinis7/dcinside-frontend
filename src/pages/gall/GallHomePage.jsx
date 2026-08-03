@@ -1,9 +1,9 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
-import { useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../auth/authContext'
+import { useMemo, useState } from 'react'
 import { BlockLoader } from '../../components/common/Loader'
+import { GalleryAllViewSearch } from '../../components/gall/GalleryAllViewSearch'
+import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 
 const GALLERY_PARENT_TOPICS = [
   '스페셜',
@@ -112,8 +112,7 @@ function toColumns(items, colCount = 7) {
 }
 
 export function GallHomePage() {
-  const navigate = useNavigate()
-  const { isAuthed } = useAuth()
+  const [allViewOpen, setAllViewOpen] = useState(false)
 
   const { data, loading, error } = useQuery(MAIN_INDEX_PAGE_QUERY, {
     variables: {
@@ -189,18 +188,53 @@ export function GallHomePage() {
     return { left: items.slice(0, mid), right: items.slice(mid) }
   }, [data])
 
+  const allViewGalleries = useMemo(() => {
+    const rows = []
+    for (const [topicName, section] of topicSectionMap.entries()) {
+      for (const g of section.galleries) {
+        rows.push({
+          key: `${topicName}_${g.key}`,
+          label: g.label,
+          href: g.href,
+          topicName,
+        })
+      }
+    }
+    return rows
+  }, [topicSectionMap])
+
+  const allViewRecommended = useMemo(
+    () =>
+      hotMain.map((g) => ({
+        key: g.key,
+        title: g.title,
+        href: g.id ? `/gall/board/lists/?id=${encodeURIComponent(g.id)}` : '#',
+      })),
+    [hotMain],
+  )
+
   if (loading) return <BlockLoader label="메인 갤러리 불러오는 중..." />
 
   return (
     <section className="grid gap-2 text-[12px]">
-      <div className="flex items-center justify-between">
+      <div className="relative flex items-center justify-between">
         <button
           type="button"
           className="h-[22px] rounded-full bg-[#2f3d8f] px-3 text-[12px] font-bold text-white"
-          onClick={() => navigate('/gall')}
+          aria-expanded={allViewOpen}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => setAllViewOpen((v) => !v)}
         >
           갤러리 전체보기
         </button>
+        <GalleryAllViewSearch
+          open={allViewOpen}
+          onClose={() => setAllViewOpen(false)}
+          galleries={allViewGalleries}
+          recommended={allViewRecommended}
+          categories={GALLERY_PARENT_TOPICS}
+          galleryTypeName="메인"
+        />
         <div className="flex items-center gap-2 text-[12px]">
           <span className="rounded-full border border-[#c8d1ef] bg-[#f4f7ff] px-3 py-[2px] text-[11px] font-bold text-[#2f3d8f]">
             인기순
@@ -210,7 +244,7 @@ export function GallHomePage() {
 
       {error ? (
         <div className="rounded border border-[#d3d3d3] bg-white px-4 py-3 text-[12px] text-[#d31900]">
-          메인 갤러리를 불러오지 못했습니다: {error.message}
+          메인 갤러리를 불러오지 못했습니다: {firstGraphQLErrorMessage(error)}
         </div>
       ) : null}
 

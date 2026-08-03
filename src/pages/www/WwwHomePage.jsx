@@ -6,6 +6,7 @@ import { buildWwwHomeMock } from '../../mocks/wwwHomeMock'
 import { RealtimeBestSection } from '../../components/www/home/RealtimeBestSection'
 import { ConceptSection } from '../../components/www/home/ConceptSection'
 import { RightSidebar } from '../../components/www/home/RightSidebar'
+import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { buildDcinsidePostViewHref } from '../../utils/dcinsideGalleryLinks'
 
 const REALTIME_BEST_QUERY = gql`
@@ -101,7 +102,7 @@ export function WwwHomePage() {
           <RealtimeBestSection
             items={realtimeBestItems}
             loading={loading}
-            errorMessage={error?.message ?? null}
+            errorMessage={error ? firstGraphQLErrorMessage(error) : null}
           />
           <ConceptSection categories={data.conceptCategories} postsByCategory={data.conceptPostsByCategory} />
         </div>

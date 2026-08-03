@@ -1,9 +1,10 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 import { BlockLoader } from '../../components/common/Loader'
+import { GalleryAllViewSearch } from '../../components/gall/GalleryAllViewSearch'
 
 const HOT_MINOR = [
   '지지직',
@@ -151,6 +152,7 @@ function MinorCreateButton({ onClick, isBusy = false }) {
 export function GallMinorIndexPage() {
   const navigate = useNavigate()
   const { isAuthed, isLoading, viewer, logout } = useAuth()
+  const [allViewOpen, setAllViewOpen] = useState(false)
   const { data, loading: isTopicTreeLoading } = useQuery(MINOR_INDEX_PAGE_QUERY, {
     variables: {
       parentTopics: GALLERY_PARENT_TOPICS,
@@ -241,6 +243,31 @@ export function GallMinorIndexPage() {
       }),
     )
   }, [topicTree])
+
+  const allViewGalleries = useMemo(() => {
+    const rows = []
+    for (const [topicName, section] of topicSectionMap.entries()) {
+      for (const g of section.galleries) {
+        rows.push({
+          key: `${topicName}_${g.key}`,
+          label: g.label,
+          href: g.href,
+          topicName,
+        })
+      }
+    }
+    return rows
+  }, [topicSectionMap])
+
+  const allViewRecommended = useMemo(
+    () =>
+      topMinor.map((g) => ({
+        key: g.key,
+        title: g.title,
+        href: g.id ? `/gall/mgallery/board/lists/?id=${encodeURIComponent(g.id)}` : '#',
+      })),
+    [topMinor],
+  )
 
   return (
     <section className="grid gap-2 text-[12px]">
@@ -433,14 +460,24 @@ export function GallMinorIndexPage() {
         <div className={isAuthed ? 'border border-[#e3e6ef] bg-gradient-to-br from-[#f4f6f9] via-[#fdfefe] to-white' : ''} />
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="relative flex items-center justify-between">
         <button
           type="button"
           className="h-[22px] rounded-full bg-[#2f3d8f] px-3 text-[12px] font-bold text-white"
-          onClick={() => navigate('/gall')}
+          aria-expanded={allViewOpen}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => setAllViewOpen((v) => !v)}
         >
           갤러리 전체보기
         </button>
+        <GalleryAllViewSearch
+          open={allViewOpen}
+          onClose={() => setAllViewOpen(false)}
+          galleries={allViewGalleries}
+          recommended={allViewRecommended}
+          categories={GALLERY_PARENT_TOPICS}
+          galleryTypeName="마이너"
+        />
         <div className="flex items-center gap-2 text-[12px]">
           <span className="rounded-full bg-[#2f3d8f] px-3 py-[2px] text-[11px] font-bold text-white">실시간 북적 갤러리</span>
           <span className="inline-flex h-4 w-4 items-center justify-center bg-[#ff9f00] text-[10px] font-bold text-white">6</span>

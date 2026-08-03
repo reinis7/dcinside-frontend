@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { createGalleryComment, deleteGalleryComment, fetchGalleryPostComments, getCommentActionErrorMessage } from '../../api/gallCommentApi'
+import { localizeErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import {
   deletePostById,
   findGalleryPostStats,
@@ -332,7 +333,9 @@ function GallBoardCommentForm({
         disabled={disabled || !isAuthed || !isCommentOpen || isSubmitting || isMediaUploading}
       />
       <div className="min-h-[18px] pt-1 text-[12px]">
-        {errorMsg ? <span className="font-semibold text-[#d31900]">{errorMsg}</span> : null}
+        {errorMsg ? (
+          <span className="font-semibold text-[#d31900]">{localizeErrorMessage(errorMsg) || errorMsg}</span>
+        ) : null}
         {!errorMsg && !isCommentOpen ? <span className="text-[#777]">이 게시글은 댓글 작성이 닫혀 있습니다.</span> : null}
       </div>
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -683,7 +686,7 @@ export function GallBoardViewPage() {
 
       {hasValidPostNo && !isInitialPostLoading && postLoadError ? (
         <div className="px-4 py-6 text-[12px] text-[#d31900]">
-          게시글을 불러오지 못했습니다: {postLoadError.message}
+          게시글을 불러오지 못했습니다: {getPostActionErrorMessage(postLoadError)}
         </div>
       ) : null}
 
@@ -761,7 +764,9 @@ export function GallBoardViewPage() {
             </div>
 
             {commentsError ? (
-              <div className="mb-2 text-[12px] font-semibold text-[#d31900]">{commentsError}</div>
+              <div className="mb-2 text-[12px] font-semibold text-[#d31900]">
+                {localizeErrorMessage(commentsError) || commentsError}
+              </div>
             ) : null}
 
             {isCommentsLoading && comments.length === 0 ? (

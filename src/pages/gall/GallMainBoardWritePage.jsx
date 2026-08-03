@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import JoditEditor from 'jodit-react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { apolloClient } from '../../apollo/apolloClient'
-import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
+import { firstGraphQLErrorMessage, localizeErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import {
   canUserEditPost,
   GALL_POST_EDIT_QUERY,
@@ -252,7 +252,9 @@ export function GallMainBoardWritePage() {
             </div>
           </div>
 
-          {errorMsg ? <div className="text-[12px] font-semibold text-[#d31900]">{errorMsg}</div> : null}
+          {errorMsg ? (
+            <div className="text-[12px] font-semibold text-[#d31900]">{localizeErrorMessage(errorMsg) || errorMsg}</div>
+          ) : null}
 
           <div className="flex items-center gap-2 pt-1">
             <button

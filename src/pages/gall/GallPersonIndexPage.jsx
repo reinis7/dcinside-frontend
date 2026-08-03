@@ -1,11 +1,12 @@
 import { gql } from '@apollo/client/core'
 import { useQuery } from '@apollo/client/react'
 import dayjs from 'dayjs'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { useAuth } from '../../auth/authContext'
 import { BlockLoader } from '../../components/common/Loader'
+import { GalleryAllViewSearch } from '../../components/gall/GalleryAllViewSearch'
 
 const PERSON_INDEX_PAGE_QUERY = gql`
   query PersonIndexPage($parentTopics: [String!], $limit: Int = 80) {
@@ -133,6 +134,7 @@ export function GallPersonIndexPage() {
   const navigate = useNavigate()
   const loc = useLocation()
   const { isAuthed, viewer, logout } = useAuth()
+  const [allViewOpen, setAllViewOpen] = useState(false)
 
   const PARENT_TOPICS = useMemo(
     () => [
@@ -212,12 +214,45 @@ export function GallPersonIndexPage() {
         title: topicName,
         count: allGalleries.length,
         galleries,
+        allGalleries,
       }
     })
     return panels
   }, [data, PARENT_TOPICS])
 
   const topicPanelMap = useMemo(() => new Map(topicPanels.map((p) => [p.key, p])), [topicPanels])
+
+  const allViewGalleries = useMemo(() => {
+    const rows = []
+    for (const panel of topicPanels) {
+      for (const g of panel.allGalleries ?? []) {
+        const slug = g?.slug || String(g?.databaseId ?? '')
+        const label = stripHtml(g?.title) || slug
+        if (!label) continue
+        rows.push({
+          key: `${panel.key}_${g.databaseId ?? g.slug ?? label}`,
+          label,
+          href: slug ? `/gall/p/board/lists/?id=${encodeURIComponent(slug)}` : '#',
+          topicName: panel.key,
+        })
+      }
+    }
+    return rows
+  }, [topicPanels])
+
+  const allViewRecommended = useMemo(
+    () =>
+      topPeople.map((g) => {
+        const slug = g?.slug || ''
+        const title = stripHtml(g?.title) || slug || '인물 갤러리'
+        return {
+          key: String(g?.slug ?? g?.databaseId ?? title),
+          title,
+          href: slug ? `/gall/p/board/lists/?id=${encodeURIComponent(slug)}` : '#',
+        }
+      }),
+    [topPeople],
+  )
 
   return (
     <section className="grid grid-cols-2 gap-3">
@@ -304,10 +339,16 @@ export function GallPersonIndexPage() {
             </div>
           </div>
 
-          <div className="border-b border-[#2f3d8f] bg-[#2f3d8f] px-3 py-1.5 text-[12px] font-bold text-white">
+          <div className="relative border-b border-[#2f3d8f] bg-[#2f3d8f] px-3 py-1.5 text-[12px] font-bold text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <button type="button" className="h-[20px] rounded-full bg-[#1f2f77] px-3 text-[11px] font-bold text-white">
+                <button
+                  type="button"
+                  className="h-[20px] rounded-full bg-[#1f2f77] px-3 text-[11px] font-bold text-white"
+                  aria-expanded={allViewOpen}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => setAllViewOpen((v) => !v)}
+                >
                   갤러리 전체보기
                 </button>
                 <button type="button" className="h-[20px] rounded-full border border-[#4053aa] bg-[#2f3d8f] px-3 text-[11px] font-bold text-white">
@@ -322,6 +363,14 @@ export function GallPersonIndexPage() {
                 <span className="text-[#cfd6ff]">▾</span>
               </div>
             </div>
+            <GalleryAllViewSearch
+              open={allViewOpen}
+              onClose={() => setAllViewOpen(false)}
+              galleries={allViewGalleries}
+              recommended={allViewRecommended}
+              categories={PARENT_TOPICS}
+              galleryTypeName="인물"
+            />
           </div>
         </div>
       </div>

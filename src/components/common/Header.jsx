@@ -2,10 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../../auth/authContext'
+import {
+  clearRecentGalleries,
+  readRecentGalleries,
+  removeRecentGallery,
+  subscribeRecentGalleries,
+} from '../../utils/recentGalleriesStorage'
 import { UserManageJoinModal } from './UserManageJoinModal'
 import { UserNotificationsModal } from './UserNotificationsModal'
 
-const SUB_HEADERS = ['최근 방문', '실시간 베스트', '싱글벙글 지구촌', '힛갤', '위뉴스', '개정줌']
 const USER_DROPDOWN_ITEMS = [
   { key: 'my-gallog', label: 'MY갤로그', toType: 'gallog' },
   { key: 'fixed-nick', label: '고정닉정보', to: '/sign/myinfo/modify' },
@@ -24,8 +29,14 @@ export function Header() {
   const myGallogHref = currentUserId ? `/gallog/${encodeURIComponent(currentUserId)}/posting/all` : '/gallog'
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [headerModal, setHeaderModal] = useState(null)
+  const [recentGalleries, setRecentGalleries] = useState(() => readRecentGalleries())
   const userMenuRef = useRef(null)
   const headerSearchRef = useRef(null)
+
+  useEffect(() => {
+    setRecentGalleries(readRecentGalleries())
+    return subscribeRecentGalleries(() => setRecentGalleries(readRecentGalleries()))
+  }, [])
 
   useEffect(() => {
     if (!location.pathname.startsWith('/search/q')) return
@@ -296,22 +307,36 @@ export function Header() {
 
       <div className="border-t border-[#ececec] bg-[#fafafa]">
         <div className="mx-auto flex h-[32px] w-[1050px] items-center justify-between px-1 text-[12px]">
-          <div className="flex items-center gap-2 text-[#555]">
-            {SUB_HEADERS.map((item, idx) => (
-              <a
-                key={item}
-                href="#"
-                className="hover:text-[#2f3d8f] hover:underline"
-                onClick={(e) => e.preventDefault()}
-              >
-                {item}
-                {idx < SUB_HEADERS.length - 1 ? <span className="ml-2 text-[#c2c2c2]">×</span> : null}
-              </a>
-            ))}
+          <div className="flex min-w-0 items-center gap-2 text-[#555]">
+            <span className="shrink-0 font-bold text-[#333]">최근 방문</span>
+            <ul className="m-0 flex min-w-0 list-none items-center gap-2 overflow-x-auto p-0">
+              {recentGalleries.map((g) => (
+                <li key={g.id} className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    className="inline-flex h-[14px] w-[14px] items-center justify-center text-[11px] leading-none text-[#c2c2c2] hover:text-[#666]"
+                    aria-label={`${g.title} 삭제`}
+                    onClick={() => setRecentGalleries(removeRecentGallery(g.id))}
+                  >
+                    ×
+                  </button>
+                  <Link to={g.href} className="max-w-[140px] truncate text-[#555] hover:text-[#2f3d8f] hover:underline" title={g.title}>
+                    {g.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <a href="#" className="text-[11px] text-[#3b4890] hover:underline" onClick={(e) => e.preventDefault()}>
+          <button
+            type="button"
+            className="shrink-0 text-[11px] text-[#3b4890] hover:underline"
+            onClick={() => {
+              clearRecentGalleries()
+              setRecentGalleries([])
+            }}
+          >
             전체
-          </a>
+          </button>
         </div>
       </div>
 

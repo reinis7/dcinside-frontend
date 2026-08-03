@@ -11,12 +11,14 @@ import { GallMinorBoardWritePage } from '../pages/gall/GallMinorBoardWritePage'
 import { GallMainBoardWritePage } from '../pages/gall/GallMainBoardWritePage'
 import { RequireAuth } from '../auth/RequireAuth'
 import { Header } from '../components/common/Header'
+import { RecentGalleryVisitTracker } from '../components/gall/RecentGalleryVisitTracker'
 import { DcFooter } from '../layout/DcFooter'
 
 function GallLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#f3f3f3] text-[#333]">
       <Header />
+      <RecentGalleryVisitTracker />
 
       <main className="mx-auto w-[1050px] px-1 py-3 text-[12px]">{children}</main>
       <DcFooter />

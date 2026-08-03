@@ -1,3 +1,5 @@
+import { localizeErrorMessage } from './api/firstGraphQLErrorMessage.js'
+
 const QUERY = `
   query RecentPosts($first: Int = 8) {
     posts(
@@ -51,11 +53,14 @@ export async function fetchRecentPosts(endpoint, first = 8) {
     body: JSON.stringify({ query: QUERY, variables: { first } }),
   })
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`)
+    throw new Error(`요청에 실패했습니다. (HTTP ${res.status})`)
   }
   const json = await res.json()
   if (json.errors?.length) {
-    throw new Error(json.errors.map((e) => e.message).join('; '))
+    throw new Error(
+      json.errors.map((e) => localizeErrorMessage(e.message) || e.message).join('; ') ||
+        '요청 처리 중 오류가 발생했습니다.',
+    )
   }
   const nodes = json.data?.posts?.nodes ?? []
   return formatWpPosts(nodes)

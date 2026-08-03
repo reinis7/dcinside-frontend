@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { localizeErrorMessage } from './api/firstGraphQLErrorMessage.js'
 import { SAMPLE_POSTS } from './samplePosts.js'
 import {
   fetchRecentPosts,
@@ -48,7 +49,7 @@ export function PostList() {
       })
       .catch((err) => {
         if (cancelled) return
-        setError(err instanceof Error ? err.message : 'Request failed')
+        setError(localizeErrorMessage(err instanceof Error ? err.message : '') || '요청에 실패했습니다.')
         setPosts(SAMPLE_POSTS)
         setSource('sample')
       })

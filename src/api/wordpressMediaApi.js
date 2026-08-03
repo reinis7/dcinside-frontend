@@ -1,5 +1,6 @@
 import { getAuthorizationHeader } from '../auth/jwtStorage'
 import { ensureValidAccessToken } from '../auth/authApi'
+import { firstGraphQLErrorMessage, localizeErrorMessage } from './firstGraphQLErrorMessage'
 import { buildWordpressRestUrl } from './wordpressRestApi'
 
 function getUploadEndpoint() {
@@ -19,25 +20,32 @@ async function uploadMediaWithRest(file) {
   const formData = new FormData()
   formData.append('file', file, file.name)
 
-  const response = await fetch(getUploadEndpoint(), {
-    method: 'POST',
-    headers: {
-      Authorization: authHeader,
-      Accept: 'application/json',
-    },
-    credentials: 'include',
-    body: formData,
-  })
+  let response
+  try {
+    response = await fetch(getUploadEndpoint(), {
+      method: 'POST',
+      headers: {
+        Authorization: authHeader,
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+      body: formData,
+    })
+  } catch (err) {
+    throw new Error(firstGraphQLErrorMessage(err) || '서버에 연결하지 못했습니다. 네트워크 상태를 확인해 주세요.')
+  }
 
   const payload = await response.json().catch(() => null)
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
       throw new Error(
-        payload?.message ||
+        localizeErrorMessage(payload?.message) ||
           '미디어 업로드 권한이 없습니다. WordPress REST 미디어 API가 현재 로그인 토큰을 인증하지 못하고 있습니다.',
       )
     }
-    throw new Error(payload?.message || `미디어 업로드에 실패했습니다. (${response.status})`)
+    throw new Error(
+      localizeErrorMessage(payload?.message) || `미디어 업로드에 실패했습니다. (${response.status})`,
+    )
   }
 
   const url = pickMediaUrl(payload)

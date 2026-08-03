@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { localizeErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { copyPostLinkToClipboard } from '../../utils/sharePostLink'
 
 function SilbeIcon() {
@@ -193,7 +194,7 @@ export function GallPostEngagementPanel({
       await copyPostLinkToClipboard(shareUrl)
       toast.success('링크가 클립보드에 복사되었습니다.')
     } catch (err) {
-      toast.error(err?.message || '링크 복사에 실패했습니다.')
+      toast.error(localizeErrorMessage(err?.message) || '링크 복사에 실패했습니다.')
     } finally {
       setIsCopying(false)
     }

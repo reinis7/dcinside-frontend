@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { uploadWordpressMedia } from '../../api/wordpressMediaApi'
 
 function escapeHtmlAttribute(value) {
@@ -57,7 +58,10 @@ export function GallPostImageUploadButton({
       const media = await uploadWordpressMedia(file)
       onUploaded?.(htmlFromMedia(media, file, mediaType), media)
     } catch (error) {
-      onError?.(error?.message || (mediaType === 'video' ? '동영상 업로드에 실패했습니다.' : '이미지 업로드에 실패했습니다.'))
+      onError?.(
+        firstGraphQLErrorMessage(error) ||
+          (mediaType === 'video' ? '동영상 업로드에 실패했습니다.' : '이미지 업로드에 실패했습니다.'),
+      )
     } finally {
       setUploading(false)
     }
