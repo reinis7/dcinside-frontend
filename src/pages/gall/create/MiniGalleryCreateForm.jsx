@@ -40,7 +40,6 @@ export function MiniGalleryCreateForm({
   form,
   setFormField,
   backTo,
-  canSubmit,
   handleCreate,
   isSubmitting,
   isTopicLoading,
@@ -49,6 +48,7 @@ export function MiniGalleryCreateForm({
   nameLength,
   descriptionLength,
   slugLength,
+  fieldErrors = {},
 }) {
   const navigate = useNavigate()
 
@@ -132,12 +132,13 @@ export function MiniGalleryCreateForm({
               </span>
               <span className="text-[12px] text-[#666]">{nameLength}/12</span>
             </div>
+            {fieldErrors.name ? <p className="mt-1 text-[12px] text-[#d62400]">{fieldErrors.name}</p> : null}
             <p className="mt-1 text-[12px] text-[#d62400]">※ 이름은 개설 후 7일 이내에만 1회 수정할 수 있습니다.</p>
           </div>
         </div>
 
         <div className="grid grid-cols-[120px_1fr] border-b border-[#ebebeb]">
-          <div className="px-2 py-3 font-bold text-[#555]">설명</div>
+          <div className="px-2 py-3 font-bold text-[#555]">설명 <span className="text-[#d62400]">*</span></div>
           <div className="px-2 py-2">
             <textarea
               value={form.description}
@@ -145,6 +146,7 @@ export function MiniGalleryCreateForm({
               className="h-[100px] w-full max-w-[620px] border border-[#cfcfcf] p-2 text-[13px]"
               placeholder="미니 갤러리에 대한 설명을 넣어주세요."
             />
+            {fieldErrors.description ? <p className="mt-1 text-[12px] text-[#d62400]">{fieldErrors.description}</p> : null}
             <div className="mt-1 text-right text-[12px] text-[#888]">{descriptionLength}/200</div>
           </div>
         </div>
@@ -161,6 +163,7 @@ export function MiniGalleryCreateForm({
               />
               <span className="text-[12px] text-[#666]">{slugLength}/20</span>
             </div>
+            {fieldErrors.slug ? <p className="mt-1 text-[12px] text-[#d62400]">{fieldErrors.slug}</p> : null}
             <p className="mt-1 text-[12px] text-[#d62400]">※ 주소는 만들기 후 수정이 불가능합니다. 신중히 입력해주세요.</p>
           </div>
         </div>
@@ -184,6 +187,7 @@ export function MiniGalleryCreateForm({
                   ))
                 : null}
             </select>
+            {fieldErrors.topicId ? <p className="mt-1 text-[12px] text-[#d62400]">{fieldErrors.topicId}</p> : null}
           </div>
         </div>
       </div>
@@ -200,6 +204,7 @@ export function MiniGalleryCreateForm({
               />
               미니 갤러리 개인정보정책에 동의합니다.
             </label>
+            {fieldErrors.agreedPrivacy ? <p className="mb-1 text-[12px] text-[#d62400]">{fieldErrors.agreedPrivacy}</p> : null}
             <textarea readOnly className="h-[280px] w-full resize-none border border-[#cfcfcf] bg-white p-2 text-[12px] leading-[1.5] text-[#555]" value={MINI_LEGAL_PRIVACY} />
           </div>
           <div>
@@ -212,6 +217,7 @@ export function MiniGalleryCreateForm({
               />
               미니 갤러리 운영원칙에 동의합니다.
             </label>
+            {fieldErrors.agreedRules ? <p className="mb-1 text-[12px] text-[#d62400]">{fieldErrors.agreedRules}</p> : null}
             <textarea readOnly className="h-[220px] w-full resize-none border border-[#cfcfcf] bg-white p-2 text-[12px] leading-[1.5] text-[#555]" value={MINI_LEGAL_RULES} />
           </div>
         </div>
@@ -233,8 +239,8 @@ export function MiniGalleryCreateForm({
           </button>
           <button
             type="button"
-            className="h-[36px] min-w-[92px] rounded border border-[#253f90] bg-[#2f4aa0] px-4 text-[18px] font-bold text-white"
-            disabled={!canSubmit}
+            className="h-[36px] min-w-[92px] rounded border border-[#253f90] bg-[#2f4aa0] px-4 text-[18px] font-bold text-white disabled:opacity-60"
+            disabled={isSubmitting}
             onClick={handleCreate}
           >
             {isSubmitting ? '처리 중' : '만들기'}

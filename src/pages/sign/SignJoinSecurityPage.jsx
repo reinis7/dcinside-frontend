@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { registerUser } from '../../auth/registerApi'
-import { useCaptchaChallenge } from '../../auth/useCaptchaChallenge'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
+import { validateJoinForm } from '../../auth/joinValidation'
 import { useAuth } from '../../auth/authContext'
-import { CaptchaChallengeField } from '../../components/sign/CaptchaChallengeField'
 
 function makeSecurityCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase()
@@ -17,12 +16,11 @@ export function SignJoinSecurityPage() {
   const joinForm = location.state?.joinForm
   const generatedCode = useMemo(() => makeSecurityCode(), [])
   const securityCode = location.state?.securityCode ?? generatedCode
-  const { challenge, answer, setAnswer, loading: captchaLoading, loadError: captchaLoadError, refresh } =
-    useCaptchaChallenge()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const canSubmit = Boolean(challenge?.id) && answer.trim().length > 0 && !captchaLoading
+  const formError = validateJoinForm(joinForm || {})
+  const canSubmit = !formError
 
   return (
     <section className="mx-auto w-[760px] border border-[#d1d5db] bg-white p-4 text-[12px]">
@@ -47,17 +45,11 @@ export function SignJoinSecurityPage() {
           </ul>
         </div>
 
-        <div className="mt-3">
-          <CaptchaChallengeField
-            challenge={challenge}
-            answer={answer}
-            onAnswerChange={setAnswer}
-            loading={captchaLoading}
-            loadError={captchaLoadError}
-            onRefresh={refresh}
-            disabled={isSubmitting}
-          />
-        </div>
+        {formError ? (
+          <div className="mt-3 rounded border border-[#f2b8b5] bg-[#fff5f5] px-3 py-2 text-[#d31900]">
+            {formError} 이전 단계에서 수정해 주세요.
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center justify-between">
@@ -74,21 +66,24 @@ export function SignJoinSecurityPage() {
           disabled={!canSubmit || isSubmitting}
           onClick={async () => {
             if (!canSubmit || isSubmitting) return
+            const validationError = validateJoinForm(joinForm || {})
+            if (validationError) {
+              setErrorMsg(validationError)
+              return
+            }
             setErrorMsg('')
             setIsSubmitting(true)
             try {
               const agree = location.state?.agree ?? { terms: false, privacy: false, marketing: false }
               const registerData = await registerUser({
-                username: joinForm?.userId ?? '',
-                password: joinForm?.password ?? '',
-                email: joinForm?.email,
-                nickname: joinForm?.nickname ?? '',
+                username: joinForm.userId.trim(),
+                password: joinForm.password,
+                email: joinForm.email,
+                nickname: joinForm.nickname.trim(),
                 agreedTerms: Boolean(agree.terms),
                 agreedPrivacy: Boolean(agree.privacy),
                 agreedMarketing: Boolean(agree.marketing),
                 securityCode,
-                captchaId: challenge.id,
-                captchaAnswer: answer.trim(),
               })
 
               const payload = registerData?.dcinsideRegisterUser
@@ -96,8 +91,7 @@ export function SignJoinSecurityPage() {
                 throw new Error(payload?.message || '회원가입에 실패했습니다.')
               }
 
-              // 자동 로그인(JWT)
-              await doLogin({ userId: joinForm?.userId ?? '', password: joinForm?.password ?? '' })
+              await doLogin({ userId: joinForm.userId.trim(), password: joinForm.password })
               await loadViewer()
 
               navigate('/sign/join/done', {
@@ -105,8 +99,16 @@ export function SignJoinSecurityPage() {
                 state: { joinForm, securityCode, registerResult: payload, autoLoggedIn: true },
               })
             } catch (err) {
-              setErrorMsg(firstGraphQLErrorMessage(err))
-              await refresh()
+              const raw = String(err?.message || '')
+              const localized = firstGraphQLErrorMessage(err)
+              if (
+                joinForm?.userId &&
+                (/username is required/i.test(raw) || localized === '식별 코드를 입력해 주세요.')
+              ) {
+                setErrorMsg('식별 코드는 영문/숫자만 사용할 수 있습니다. 이전 단계에서 다시 입력해 주세요.')
+              } else {
+                setErrorMsg(localized)
+              }
             } finally {
               setIsSubmitting(false)
             }

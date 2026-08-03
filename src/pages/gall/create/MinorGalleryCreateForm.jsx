@@ -283,8 +283,8 @@ ${galleryLabel} 서비스에 등록한 모든 콘텐츠의 저작권은 게시�
           </button>
           <button
             type="button"
-            className="h-[36px] min-w-[92px] rounded border border-[#253f90] bg-[#2f4aa0] px-4 text-[18px] font-bold text-white"
-            disabled={!canSubmit}
+            className="h-[36px] min-w-[92px] rounded border border-[#253f90] bg-[#2f4aa0] px-4 text-[18px] font-bold text-white disabled:opacity-60"
+            disabled={isSubmitting}
             onClick={handleCreate}
           >
             {isSubmitting ? '처리 중' : '만들기'}

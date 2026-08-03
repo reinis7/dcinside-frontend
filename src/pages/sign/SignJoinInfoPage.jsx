@@ -1,5 +1,11 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  validateEmailOptional,
+  validateNickname,
+  validatePassword,
+  validateUsername,
+} from '../../auth/joinValidation'
 
 export function SignJoinInfoPage() {
   const location = useLocation()
@@ -13,6 +19,7 @@ export function SignJoinInfoPage() {
     nickname: '',
   })
   const [errorMsg, setErrorMsg] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const canNext =
     form.userId.trim().length > 0 &&
@@ -22,6 +29,19 @@ export function SignJoinInfoPage() {
 
   const onChange = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+    setErrorMsg('')
+  }
+
+  function runValidation() {
+    const next = {
+      userId: validateUsername(form.userId),
+      password: validatePassword(form.password),
+      nickname: validateNickname(form.nickname),
+      email: validateEmailOptional(form.email),
+    }
+    setFieldErrors(next)
+    return next.userId || next.password || next.nickname || next.email || ''
   }
 
   return (
@@ -41,9 +61,16 @@ export function SignJoinInfoPage() {
           <input
             value={form.userId}
             onChange={onChange('userId')}
-            className="rounded border border-[#d1d5db] px-3 py-2"
+            className={
+              fieldErrors.userId
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
             autoComplete="username"
+            placeholder="영문/숫자 3~20자"
           />
+          <span className="text-[11px] text-[#888]">영문, 숫자, -, _ 만 사용 (한글 불가 · 3~20자)</span>
+          {fieldErrors.userId ? <span className="text-[11px] text-[#d31900]">{fieldErrors.userId}</span> : null}
         </label>
 
         <label className="grid gap-1">
@@ -52,9 +79,14 @@ export function SignJoinInfoPage() {
             type="password"
             value={form.password}
             onChange={onChange('password')}
-            className="rounded border border-[#d1d5db] px-3 py-2"
+            className={
+              fieldErrors.password
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
             autoComplete="new-password"
           />
+          {fieldErrors.password ? <span className="text-[11px] text-[#d31900]">{fieldErrors.password}</span> : null}
         </label>
 
         <label className="grid gap-1">
@@ -63,14 +95,28 @@ export function SignJoinInfoPage() {
             type="email"
             value={form.email}
             onChange={onChange('email')}
-            className="rounded border border-[#d1d5db] px-3 py-2"
+            className={
+              fieldErrors.email
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
             autoComplete="email"
           />
+          {fieldErrors.email ? <span className="text-[11px] text-[#d31900]">{fieldErrors.email}</span> : null}
         </label>
 
         <label className="grid gap-1">
           <span className="font-semibold">닉네임</span>
-          <input value={form.nickname} onChange={onChange('nickname')} className="rounded border border-[#d1d5db] px-3 py-2" />
+          <input
+            value={form.nickname}
+            onChange={onChange('nickname')}
+            className={
+              fieldErrors.nickname
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
+          />
+          {fieldErrors.nickname ? <span className="text-[11px] text-[#d31900]">{fieldErrors.nickname}</span> : null}
         </label>
 
         {errorMsg ? (
@@ -92,8 +138,13 @@ export function SignJoinInfoPage() {
           }
           onClick={() => {
             setErrorMsg('')
-            if (!canNext) {
-              setErrorMsg('필수 항목을 확인해 주세요.')
+            if (!agree?.terms || !agree?.privacy) {
+              setErrorMsg('약관 동의가 필요합니다. 이전 단계에서 필수 항목에 동의해 주세요.')
+              return
+            }
+            const firstError = runValidation()
+            if (firstError) {
+              setErrorMsg(firstError)
               return
             }
             navigate('/sign/join/security', {

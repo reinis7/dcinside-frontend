@@ -9,6 +9,7 @@ import { MinorGalleryCreateForm } from './create/MinorGalleryCreateForm'
 import { MiniGalleryCreateForm } from './create/MiniGalleryCreateForm'
 import { PersonGalleryCreateForm } from './create/PersonGalleryCreateForm'
 import { CREATE_GALLERY_MUTATION, GALLERY_TOPICS_QUERY } from './create/galleryCreateGraphql'
+import { validateGalleryCreateForm } from './create/galleryCreateValidation'
 import {
   backToFromPath,
   createTopicKeyFromPathname,
@@ -32,6 +33,7 @@ export function GallCreateStubPage() {
 
   const [showMinorNotice, setShowMinorNotice] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState({})
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -83,20 +85,22 @@ export function GallCreateStubPage() {
   const slugLength = form.slug.length
   const reasonLength = form.reason.length
 
-  const canSubmit =
-    form.name.trim().length > 0 &&
-    form.description.trim().length > 0 &&
-    form.slug.trim().length > 0 &&
-    form.topicId.trim().length > 0 &&
-    (isMiniCreatePath || form.reason.trim().length > 0) &&
-    form.agreedPrivacy &&
-    form.agreedRules &&
-    (isMiniCreatePath || isMainCreatePath || form.agreedPromoteToMain) &&
-    selectedGalleryTypeDatabaseId.length > 0 &&
-    !isSubmitting
+  const validation = useMemo(
+    () =>
+      validateGalleryCreateForm(form, {
+        isMini: isMiniCreatePath,
+        isMain: isMainCreatePath,
+        requirePromoteAgree: !(isMiniCreatePath || isMainCreatePath),
+        galleryTypeReady: selectedGalleryTypeDatabaseId.length > 0,
+      }),
+    [form, isMiniCreatePath, isMainCreatePath, selectedGalleryTypeDatabaseId],
+  )
+
+  const canSubmit = !validation.firstError && !isSubmitting
 
   function setFormField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
   }
 
   function isSchemaMismatchError(message) {
@@ -105,24 +109,30 @@ export function GallCreateStubPage() {
   }
 
   async function handleCreate() {
-    if (!canSubmit) {
-      toast.warning('필수 입력/동의 항목을 확인해 주세요.')
+    const { fieldErrors: nextErrors, firstError } = validateGalleryCreateForm(form, {
+      isMini: isMiniCreatePath,
+      isMain: isMainCreatePath,
+      requirePromoteAgree: !(isMiniCreatePath || isMainCreatePath),
+      galleryTypeReady: selectedGalleryTypeDatabaseId.length > 0,
+    })
+    setFieldErrors(nextErrors)
+
+    if (firstError) {
+      toast.warning(firstError)
       return
     }
 
     const basePayload = {
       name: form.name.trim(),
       description: form.description.trim(),
-      slug: form.slug.trim(),
+      slug: form.slug.trim().toLowerCase(),
       reason: isMiniCreatePath ? '미니 갤러리 개설' : form.reason.trim(),
       ...(isMiniCreatePath ? { visibility: form.visibility } : {}),
       gallery_type: selectedGalleryTypeDatabaseId,
       galleryTopicId: String(form.topicId).trim(),
     }
-    // dcinside backend typically uses galleryId as the actual gallery identifier (often same as slug).
-    // Send it for minor/mini; retry without it if schema rejects the field.
     const payload = createTopicKey === 'minor' || createTopicKey === 'mini'
-      ? { ...basePayload, galleryId: form.slug.trim() }
+      ? { ...basePayload, galleryId: form.slug.trim().toLowerCase() }
       : basePayload
 
     setIsSubmitting(true)
@@ -182,6 +192,7 @@ export function GallCreateStubPage() {
     nameLength,
     descriptionLength,
     slugLength,
+    fieldErrors,
   }
 
   return (

@@ -64,7 +64,9 @@ export function localizeErrorMessage(raw) {
     /the user aborted a request/i.test(plain) ||
     /aborterror/i.test(plain) ||
     /^aborted$/i.test(plain) ||
-    /request aborted/i.test(plain)
+    /request aborted/i.test(plain) ||
+    /signal is aborted without reason/i.test(plain) ||
+    /The operation was aborted/i.test(plain)
   ) {
     return '요청이 취소되었습니다.'
   }

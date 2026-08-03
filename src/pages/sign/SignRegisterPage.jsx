@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
+import {
+  validateEmailOptional,
+  validateNickname,
+  validatePassword,
+  validateUsername,
+} from '../../auth/joinValidation'
 import { registerUser } from '../../auth/registerApi'
-import { useCaptchaChallenge } from '../../auth/useCaptchaChallenge'
 import { useAuth } from '../../auth/authContext'
-import { CaptchaChallengeField } from '../../components/sign/CaptchaChallengeField'
 
 export function SignRegisterPage() {
   const navigate = useNavigate()
   const { login, loadViewer, viewer } = useAuth()
-  const { challenge, answer, setAnswer, loading: captchaLoading, loadError: captchaLoadError, refresh } =
-    useCaptchaChallenge()
   const [form, setForm] = useState({
     username: '',
     password: '',
@@ -23,30 +25,54 @@ export function SignRegisterPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   const canSubmit =
     form.username.trim().length > 0 &&
     form.password.length >= 8 &&
     form.nickname.trim().length > 0 &&
     form.agreedTerms &&
-    form.agreedPrivacy &&
-    Boolean(challenge?.id) &&
-    answer.trim().length > 0 &&
-    !captchaLoading
+    form.agreedPrivacy
 
   const onChange = (key) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setForm((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: '' }))
+    setErrorMsg('')
+  }
+
+  function runValidation() {
+    const next = {
+      username: validateUsername(form.username),
+      password: validatePassword(form.password),
+      nickname: validateNickname(form.nickname),
+      email: validateEmailOptional(form.email),
+    }
+    setFieldErrors(next)
+    return next.username || next.password || next.nickname || next.email || ''
   }
 
   const onSubmit = async (e) => {
     e.preventDefault()
     if (!canSubmit || isSubmitting) return
+
+    if (!form.agreedTerms || !form.agreedPrivacy) {
+      setErrorMsg('필수 약관에 동의해 주세요.')
+      return
+    }
+
+    const firstError = runValidation()
+    if (firstError) {
+      setErrorMsg(firstError)
+      return
+    }
+
+    const username = form.username.trim()
     setErrorMsg('')
     setIsSubmitting(true)
     try {
       const registerData = await registerUser({
-        username: form.username.trim(),
+        username,
         password: form.password,
         email: form.email.trim() ? form.email.trim() : undefined,
         nickname: form.nickname.trim(),
@@ -54,20 +80,23 @@ export function SignRegisterPage() {
         agreedPrivacy: form.agreedPrivacy,
         agreedMarketing: form.agreedMarketing,
         securityCode: form.securityCode.trim() ? form.securityCode.trim() : undefined,
-        captchaId: challenge.id,
-        captchaAnswer: answer.trim(),
       })
 
       const payload = registerData?.dcinsideRegisterUser
       if (!payload?.success) throw new Error(payload?.message || '회원가입에 실패했습니다.')
 
-      await login({ userId: form.username.trim(), password: form.password })
+      await login({ userId: username, password: form.password })
       await loadViewer()
 
       navigate('/www', { replace: true })
     } catch (err) {
-      setErrorMsg(firstGraphQLErrorMessage(err))
-      await refresh()
+      const raw = String(err?.message || '')
+      const localized = firstGraphQLErrorMessage(err)
+      if (/username is required/i.test(raw) || localized === '식별 코드를 입력해 주세요.') {
+        setErrorMsg('식별 코드는 영문/숫자만 사용할 수 있습니다.')
+      } else {
+        setErrorMsg(localized)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -81,7 +110,18 @@ export function SignRegisterPage() {
       <form onSubmit={onSubmit} className="mt-3 grid gap-3 border-t-2 border-[#374151] pt-3">
         <label className="grid gap-1">
           <span className="font-semibold">식별 코드(username)</span>
-          <input value={form.username} onChange={onChange('username')} className="rounded border border-[#d1d5db] px-3 py-2" />
+          <input
+            value={form.username}
+            onChange={onChange('username')}
+            className={
+              fieldErrors.username
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
+            placeholder="영문/숫자 3~20자"
+          />
+          <span className="text-[11px] text-[#888]">영문, 숫자, -, _ 만 사용 (한글 불가 · 3~20자)</span>
+          {fieldErrors.username ? <span className="text-[11px] text-[#d31900]">{fieldErrors.username}</span> : null}
         </label>
 
         <label className="grid gap-1">
@@ -90,18 +130,41 @@ export function SignRegisterPage() {
             type="password"
             value={form.password}
             onChange={onChange('password')}
-            className="rounded border border-[#d1d5db] px-3 py-2"
+            className={
+              fieldErrors.password
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
           />
+          {fieldErrors.password ? <span className="text-[11px] text-[#d31900]">{fieldErrors.password}</span> : null}
         </label>
 
         <label className="grid gap-1">
           <span className="font-semibold">이메일(선택)</span>
-          <input value={form.email} onChange={onChange('email')} className="rounded border border-[#d1d5db] px-3 py-2" />
+          <input
+            value={form.email}
+            onChange={onChange('email')}
+            className={
+              fieldErrors.email
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
+          />
+          {fieldErrors.email ? <span className="text-[11px] text-[#d31900]">{fieldErrors.email}</span> : null}
         </label>
 
         <label className="grid gap-1">
           <span className="font-semibold">닉네임</span>
-          <input value={form.nickname} onChange={onChange('nickname')} className="rounded border border-[#d1d5db] px-3 py-2" />
+          <input
+            value={form.nickname}
+            onChange={onChange('nickname')}
+            className={
+              fieldErrors.nickname
+                ? 'rounded border border-[#d31900] px-3 py-2 outline-none'
+                : 'rounded border border-[#d1d5db] px-3 py-2'
+            }
+          />
+          {fieldErrors.nickname ? <span className="text-[11px] text-[#d31900]">{fieldErrors.nickname}</span> : null}
         </label>
 
         <label className="grid gap-1">
@@ -112,16 +175,6 @@ export function SignRegisterPage() {
             className="rounded border border-[#d1d5db] px-3 py-2"
           />
         </label>
-
-        <CaptchaChallengeField
-          challenge={challenge}
-          answer={answer}
-          onAnswerChange={setAnswer}
-          loading={captchaLoading}
-          loadError={captchaLoadError}
-          onRefresh={refresh}
-          disabled={isSubmitting}
-        />
 
         <div className="grid gap-2">
           <label className="flex items-center gap-2">

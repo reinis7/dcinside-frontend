@@ -1,25 +1,6 @@
 import { gql } from '@apollo/client/core'
 import { apolloClient } from '../apollo/apolloClient'
 
-export async function fetchCaptchaChallenge({ signal } = {}) {
-  const query = gql`
-    query DcinsideCaptchaChallenge {
-      dcinsideCaptchaChallenge {
-        id
-        question
-      }
-    }
-  `
-
-  const { data } = await apolloClient.query({
-    query,
-    fetchPolicy: 'network-only',
-    context: { skipAuth: true, fetchOptions: { signal } },
-  })
-
-  return data?.dcinsideCaptchaChallenge ?? null
-}
-
 export async function registerUser({
   username,
   password,
@@ -29,8 +10,6 @@ export async function registerUser({
   agreedPrivacy,
   agreedMarketing,
   securityCode,
-  captchaId,
-  captchaAnswer,
   signal,
 }) {
   const mutation = gql`
@@ -56,8 +35,6 @@ export async function registerUser({
       agreedPrivacy,
       agreedMarketing,
       securityCode,
-      captchaId,
-      captchaAnswer,
     },
   }
 
@@ -70,4 +47,3 @@ export async function registerUser({
 
   return data
 }
-
