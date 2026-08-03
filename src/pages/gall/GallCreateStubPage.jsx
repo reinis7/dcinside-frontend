@@ -85,6 +85,7 @@ export function GallCreateStubPage() {
 
   const canSubmit =
     form.name.trim().length > 0 &&
+    form.description.trim().length > 0 &&
     form.slug.trim().length > 0 &&
     form.topicId.trim().length > 0 &&
     (isMiniCreatePath || form.reason.trim().length > 0) &&

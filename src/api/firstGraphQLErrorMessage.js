@@ -125,14 +125,118 @@ export function localizeErrorMessage(raw) {
     return '서버 응답을 해석하지 못했습니다. 잠시 후 다시 시도해 주세요.'
   }
 
-  // 영문만으로 된 짧은 실패/오류 문구
-  if (/^[A-Za-z][A-Za-z0-9 .,'"_\-/:]{0,80}$/.test(plain)) {
-    if (/fail|error|unable|cannot|could not|invalid|denied/i.test(plain)) {
+  const requiredLocalized = localizeRequiredFieldMessage(plain)
+  if (requiredLocalized) return requiredLocalized
+
+  const fieldLabel = localizeFieldLabel(plain)
+  if (fieldLabel && /\bis (?:not |in)?valid\b/i.test(plain)) {
+    return `${fieldLabel} 값이 올바르지 않습니다.`
+  }
+  if (fieldLabel && /\balready exists\b|\bis taken\b|\bduplicate\b/i.test(plain)) {
+    return `이미 사용 중인 ${fieldLabel}입니다.`
+  }
+  if (fieldLabel && /\btoo (?:long|short)\b|\bmust be (?:at least|between|no more than)\b/i.test(plain)) {
+    return `${fieldLabel} 길이를 확인해 주세요.`
+  }
+
+  // 영문만으로 된 짧은 실패/검증 문구
+  if (/^[A-Za-z][A-Za-z0-9 .,'"_\-/:]{0,120}$/.test(plain)) {
+    if (/fail|error|unable|cannot|could not|invalid|denied|required|missing/i.test(plain)) {
       return '요청 처리 중 오류가 발생했습니다.'
     }
   }
 
   return plain
+}
+
+const FIELD_LABELS = {
+  description: '설명',
+  name: '이름',
+  title: '제목',
+  slug: '주소(ID)',
+  galleryid: '갤러리 ID',
+  gallery_id: '갤러리 ID',
+  reason: '개설 이유',
+  topic: '카테고리',
+  gallerytopicid: '카테고리',
+  gallery_topic_id: '카테고리',
+  gallerytopic: '카테고리',
+  gallerytype: '갤러리 유형',
+  gallery_type: '갤러리 유형',
+  visibility: '공개 설정',
+  password: '비밀번호',
+  username: '식별 코드',
+  nickname: '닉네임',
+  email: '이메일',
+  content: '내용',
+  captcha: '캡차',
+  captchaid: '캡차',
+  captchaanswer: '캡차 답',
+  securitycode: '보안 코드',
+}
+
+function localizeFieldLabel(raw) {
+  const key = String(raw ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '')
+  return FIELD_LABELS[key] || ''
+}
+
+/** "description is required." / "Field description is required" 등 */
+function localizeRequiredFieldMessage(plain) {
+  const patterns = [
+    /^field\s+["']?(.+?)["']?\s+is\s+required\.?$/i,
+    /^the\s+(.+?)\s+field\s+is\s+required\.?$/i,
+    /^missing\s+(?:required\s+)?(?:field\s+)?["']?(.+?)["']?\.?$/i,
+    /^["']?(.+?)["']?\s+must\s+not\s+be\s+(?:empty|blank)\.?$/i,
+    /^(.+?)\s+is\s+required\.?$/i,
+  ]
+
+  const requiredHints = {
+    description: '설명을 입력해 주세요.',
+    name: '이름을 입력해 주세요.',
+    title: '제목을 입력해 주세요.',
+    slug: '주소(ID)를 입력해 주세요.',
+    galleryid: '갤러리 ID를 입력해 주세요.',
+    gallery_id: '갤러리 ID를 입력해 주세요.',
+    reason: '개설 이유를 입력해 주세요.',
+    topic: '카테고리를 선택해 주세요.',
+    gallerytopicid: '카테고리를 선택해 주세요.',
+    gallery_topic_id: '카테고리를 선택해 주세요.',
+    gallerytopic: '카테고리를 선택해 주세요.',
+    gallerytype: '갤러리 유형을 선택해 주세요.',
+    gallery_type: '갤러리 유형을 선택해 주세요.',
+    visibility: '공개 설정을 선택해 주세요.',
+    password: '비밀번호를 입력해 주세요.',
+    username: '식별 코드를 입력해 주세요.',
+    nickname: '닉네임을 입력해 주세요.',
+    email: '이메일을 입력해 주세요.',
+    content: '내용을 입력해 주세요.',
+    captcha: '캡차 답을 입력해 주세요.',
+    captchaid: '캡차를 다시 불러와 주세요.',
+    captchaanswer: '캡차 답을 입력해 주세요.',
+    securitycode: '보안 코드를 입력해 주세요.',
+  }
+
+  for (const re of patterns) {
+    const m = plain.match(re)
+    if (!m?.[1]) continue
+    const key = String(m[1])
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '')
+    if (requiredHints[key]) return requiredHints[key]
+    const label = localizeFieldLabel(m[1])
+    if (label) return `${label}을(를) 입력해 주세요.`
+    return '필수 항목을 입력해 주세요.'
+  }
+
+  if (/^this field is required\.?$/i.test(plain) || /^required\.?$/i.test(plain)) {
+    return '필수 항목을 입력해 주세요.'
+  }
+
+  return ''
 }
 
 function pickRawGraphQLErrorMessage(err) {
