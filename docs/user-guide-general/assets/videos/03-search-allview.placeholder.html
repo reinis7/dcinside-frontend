@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>전체보기와 검색 — 영상 플레이스홀더</title>
+  <style>
+    body { font-family: "Noto Sans KR", "Malgun Gothic", sans-serif; margin: 0; background: #eef2f8; color: #222; }
+    .wrap { max-width: 880px; margin: 40px auto; background: #fff; border: 2px solid #2f3d8f; border-radius: 8px; overflow: hidden; }
+    .bar { background: #2f3d8f; color: #fff; padding: 16px 20px; font-size: 20px; font-weight: 700; }
+    .body { padding: 24px; }
+    .stage { background: #1a1a1a; color: #eee; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; border-radius: 6px; }
+    .stage strong { font-size: 22px; color: #fff; }
+    .stage span { color: #aaa; font-size: 14px; }
+    ol { line-height: 1.7; }
+    code { background: #f0f3fa; padding: 2px 6px; border-radius: 4px; }
+    a { color: #2f4aa0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar">🎬 전체보기와 검색</div>
+    <div class="body">
+      <div class="stage">
+        <strong>동영상 자리표시자</strong>
+        <span>이 위치에 <code>03-search-allview.mp4</code> 파일을 두면 video 태그로 재생할 수 있습니다.</span>
+        <video controls width="100%" style="max-width:100%; display:none" id="v">
+          <source src="./03-search-allview.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <h2>이 영상에서 보여줄 내용</h2>
+      <ol><li>갤러리 전체보기 패널</li><li>초성·카테고리 필터</li><li>헤더 통합검색</li><li>최근 방문</li></ol>
+      <p>촬영 스크립트: <a href="./03-search-allview.md">03-search-allview.md</a></p>
+      <p>가이드 목차: <a href="../../README.md">user-guide-general/README.md</a></p>
+    </div>
+  </div>
+  <script>
+    const v = document.getElementById('v');
+    fetch('./03-search-allview.mp4', { method: 'HEAD' }).then(r => {
+      if (r.ok) { v.style.display = 'block'; v.parentElement.querySelector('strong').style.display='none'; }
+    }).catch(() => {});
+  </script>
+</body>
+</html>

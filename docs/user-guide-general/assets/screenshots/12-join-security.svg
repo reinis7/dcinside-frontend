@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f8fc"/>
+      <stop offset="100%" stop-color="#e8eef8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <rect x="48" y="48" width="1184" height="624" rx="12" fill="#fff" stroke="#2f4aa0" stroke-width="3"/>
+  <rect x="48" y="48" width="1184" height="72" rx="12" fill="#2f4aa0"/>
+  <rect x="48" y="96" width="1184" height="24" fill="#2f4aa0"/>
+  <text x="72" y="92" fill="#fff" font-family="Noto Sans KR, Malgun Gothic, sans-serif" font-size="28" font-weight="700">스크린샷 자리표시자</text>
+  <text x="640" y="300" text-anchor="middle" fill="#2f4aa0" font-family="Noto Sans KR, Malgun Gothic, sans-serif" font-size="42" font-weight="700">회원가입 3 · 보안 코드</text>
+  <text x="640" y="360" text-anchor="middle" fill="#555" font-family="Noto Sans KR, Malgun Gothic, sans-serif" font-size="22">/sign/join/security</text>
+  <text x="640" y="430" text-anchor="middle" fill="#888" font-family="Noto Sans KR, Malgun Gothic, sans-serif" font-size="18">실제 화면을 캡처한 PNG로 이 파일을 교체하세요</text>
+  <text x="640" y="470" text-anchor="middle" fill="#999" font-family="Noto Sans KR, Malgun Gothic, sans-serif" font-size="16">docs/user-guide-general/assets/README.md 참고</text>
+  <rect x="440" y="520" width="400" height="56" rx="8" fill="none" stroke="#2f4aa0" stroke-dasharray="8 6" stroke-width="2"/>
+  <text x="640" y="555" text-anchor="middle" fill="#2f4aa0" font-family="Noto Sans KR, Malgun Gothic, sans-serif" font-size="18">1280 × 720 권장</text>
+</svg>
