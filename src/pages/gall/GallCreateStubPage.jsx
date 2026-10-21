@@ -11,6 +11,10 @@ import { PersonGalleryCreateForm } from './create/PersonGalleryCreateForm'
 import { CREATE_GALLERY_MUTATION, GALLERY_TOPICS_QUERY } from './create/galleryCreateGraphql'
 import { validateGalleryCreateForm } from './create/galleryCreateValidation'
 import {
+  DUPLICATE_GALLERY_ADDRESS_MESSAGE,
+  isDuplicateGalleryAddressError,
+} from './create/duplicateGalleryAddressError'
+import {
   backToFromPath,
   createTopicKeyFromPathname,
   galleryLabelFromTopicKey,
@@ -143,14 +147,17 @@ export function GallCreateStubPage() {
           mutation: CREATE_GALLERY_MUTATION,
           variables: { input: payload },
         })
+        if (isDuplicateGalleryAddressError(res?.error)) throw res.error
         data = res?.data
       } catch (err) {
+        if (isDuplicateGalleryAddressError(err)) throw err
         const msg = firstGraphQLErrorMessage(err)
         if ((createTopicKey === 'minor' || createTopicKey === 'mini') && isSchemaMismatchError(msg)) {
           const res2 = await apolloClient.mutate({
             mutation: CREATE_GALLERY_MUTATION,
             variables: { input: basePayload },
           })
+          if (isDuplicateGalleryAddressError(res2?.error)) throw res2.error
           data = res2?.data
         } else {
           throw err
@@ -163,6 +170,11 @@ export function GallCreateStubPage() {
       toast.success(`${galleryLabel} 생성 요청이 완료되었습니다.`)
       navigate(backTo)
     } catch (err) {
+      if (isDuplicateGalleryAddressError(err)) {
+        setFieldErrors((prev) => ({ ...prev, slug: DUPLICATE_GALLERY_ADDRESS_MESSAGE }))
+        toast.error(DUPLICATE_GALLERY_ADDRESS_MESSAGE)
+        return
+      }
       toast.error(firstGraphQLErrorMessage(err))
     } finally {
       setIsSubmitting(false)

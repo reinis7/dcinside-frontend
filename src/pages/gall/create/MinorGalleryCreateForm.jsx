@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { DUPLICATE_GALLERY_ADDRESS_MESSAGE } from './duplicateGalleryAddressError'
 
 /**
  * 마이너·메인·인물 갤러리 만들기 공통 레이아웃.
@@ -10,7 +11,6 @@ export function MinorGalleryCreateForm({
   form,
   setFormField,
   backTo,
-  canSubmit,
   handleCreate,
   isSubmitting,
   isTopicLoading,
@@ -20,6 +20,7 @@ export function MinorGalleryCreateForm({
   descriptionLength,
   slugLength,
   reasonLength,
+  fieldErrors = {},
 }) {
   const navigate = useNavigate()
   const showPromoteToMain = formVariant !== 'main'
@@ -142,6 +143,9 @@ export function MinorGalleryCreateForm({
                 />
                 <span className="text-[12px] text-[#666]">{slugLength}/20</span>
               </div>
+              {fieldErrors.slug === DUPLICATE_GALLERY_ADDRESS_MESSAGE ? (
+                <p className="mt-1 text-[12px] text-[#d62400]">{fieldErrors.slug}</p>
+              ) : null}
               <div className="mt-1 text-[12px] text-[#d62400]">※ 주소는 만들기 후 수정이 불가능합니다. 신중히 입력해주세요.</div>
             </div>
           </div>
@@ -196,7 +200,7 @@ export function MinorGalleryCreateForm({
             <button
               type="button"
               disabled
-              className="h-[28px] cursor-default border border-[#8b9bc9] bg-[#f5f8ff] px-2 text-[11px] font-semibold text-[#2f3d8f]"
+              className="h-[28px] cursor-default border border-[#8b9bc9] bg-[#f5f8ff] px-2 text-[11px] font-semibold text-[#2f3d8f] shrink-0"
             >
               {galleryLabel}
             </button>

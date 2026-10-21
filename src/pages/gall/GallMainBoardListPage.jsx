@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { firstGraphQLErrorMessage } from '../../api/firstGraphQLErrorMessage'
 import { useAuth } from '../../auth/authContext'
+import { BoardListPager } from '../../components/gall/BoardListPager'
+import { BOARD_LIST_FETCH_LIMIT, formatBoardTotalCount, paginateBoardRows } from '../../components/gall/boardListPaging'
 
 const MAIN_GALLERY_LIST_PAGE_QUERY = gql`
   query MainGalleryListPage($galleryId: String!, $first: Int = 50) {
@@ -86,9 +88,16 @@ export function GallMainBoardListPage() {
   const { isAuthed, viewer, logout } = useAuth()
   const galleryId = searchParams.get('id') || 'dcbest'
   const [pageSize, setPageSize] = useState(50)
+  const [page, setPage] = useState(1)
+  const listKey = `${galleryId}:${pageSize}`
+  const [listKeySeen, setListKeySeen] = useState(listKey)
+  if (listKeySeen !== listKey) {
+    setListKeySeen(listKey)
+    setPage(1)
+  }
 
   const { data, loading, error } = useQuery(MAIN_GALLERY_LIST_PAGE_QUERY, {
-    variables: { galleryId, first: pageSize },
+    variables: { galleryId, first: BOARD_LIST_FETCH_LIMIT },
     fetchPolicy: 'network-only',
   })
 
@@ -103,7 +112,12 @@ export function GallMainBoardListPage() {
   const managerLabel = (ownerDisplayName || ownerNickname || '').trim() || '-'
   const displayName = viewer?.username || viewer?.name || '회원'
 
-  const rows = useMemo(() => toRows(data?.dcinsidePostsByGalleryId ?? []), [data])
+  const allRows = useMemo(() => toRows(data?.dcinsidePostsByGalleryId ?? []), [data])
+  const { pageRows, pageCount, totalCount, safePage, capped } = useMemo(
+    () => paginateBoardRows(allRows, page, pageSize),
+    [allRows, page, pageSize],
+  )
+  const totalLabel = formatBoardTotalCount(loading || error ? null : totalCount, { loading: loading || Boolean(error), capped })
 
   const loginHref = `/sign/login?s_url=${encodeURIComponent(`${loc.pathname}${loc.search}`)}`
   const writeHref = `/gall/board/write/?id=${encodeURIComponent(galleryId)}`
@@ -158,6 +172,7 @@ export function GallMainBoardListPage() {
               공지
             </button>
             <span className="ml-3 text-[#333]">{galleryPostName}</span>
+            <span className="font-bold text-[#2f3d8f]">총 게시글 {totalLabel}</span>
           </div>
           <div className="flex items-center gap-1">
             <select
@@ -210,7 +225,7 @@ export function GallMainBoardListPage() {
                   </td>
                 </tr>
               ) : null}
-              {!loading && !error && rows.length === 0 ? (
+              {!loading && !error && allRows.length === 0 ? (
                 <tr>
                   <td className="px-2 py-8 text-center text-[#666]" colSpan={7}>
                     게시글이 없습니다.
@@ -218,7 +233,7 @@ export function GallMainBoardListPage() {
                 </tr>
               ) : null}
               {!loading && !error
-                ? rows.map((row) => (
+                ? pageRows.map((row) => (
                     <tr key={`${row.no}_${row.title}`} className="border-b border-[#efefef] text-[#333]">
                       <td className="px-2 py-1.5 text-center text-[#666]">{row.no}</td>
                       <td className="px-2 py-1.5 text-center text-[#666]">{row.type}</td>
@@ -244,6 +259,7 @@ export function GallMainBoardListPage() {
             </tbody>
           </table>
         </div>
+        {!loading && !error ? <BoardListPager page={safePage} pageCount={pageCount} onPageChange={setPage} /> : null}
       </div>
 
       <aside className="space-y-3">
